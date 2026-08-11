@@ -89,6 +89,12 @@ Current-location requests include browser-provided coordinates:
 /api/routes/sensory-rating?start=Current%20location&destination=State%20Library%20Victoria&startLat=-37.8136&startLng=144.9631
 ```
 
+Manually searched starting points use the same coordinate fields while retaining the selected place name:
+
+```text
+/api/routes/sensory-rating?start=Bain%20%26%20Company&destination=State%20Library%20Victoria&startLat=-37.8137374&startLng=144.9693855
+```
+
 Both coordinate fields are required and must fall within the prototype's Melbourne CBD coverage area. Browser geolocation is available on `localhost` and HTTPS deployments after the user grants permission.
 
 ## Real Walking Routes
@@ -104,7 +110,7 @@ The frontend displays whether the current geometry is live or fallback and inclu
 
 ## Place Search
 
-Destination searches use the public OpenStreetMap Nominatim API. The Express backend limits requests to one at a time with at least 1.1 seconds between calls, caches successful searches for 24 hours, identifies the application with a custom User-Agent, and restricts results to the Melbourne CBD sensory-data coverage area.
+Starting-point and destination searches use the public OpenStreetMap Nominatim API. The Express backend limits requests to one at a time with at least 1.1 seconds between calls, caches successful searches for 24 hours, identifies the application with a custom User-Agent, and restricts results to the Melbourne CBD sensory-data coverage area.
 
 Search is triggered only when the user submits the form. It is intentionally not implemented as per-keystroke autocomplete because that usage is prohibited by the public Nominatim policy. The user selects one of up to five address results before its coordinates are sent to the walking-route service.
 
@@ -141,7 +147,7 @@ The prototype does not require private API keys. City of Melbourne data and the 
 
 ## Prototype Scope
 
-- Search for arbitrary addresses and places within Melbourne CBD
+- Search for arbitrary starting points and destinations within Melbourne CBD
 - Real street-following walking routes for selected CBD places and valid current-location coordinates
 - Browser geolocation for dynamic starting coordinates within Melbourne CBD
 - Approximate sensor-to-route matching
