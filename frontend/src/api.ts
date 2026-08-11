@@ -1,4 +1,4 @@
-import type { Coordinates, PlacesResponse, RatingResponse } from "./types";
+import type { Coordinates, GeocodeResponse, PlacesResponse, RatingResponse } from "./types";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "";
 
@@ -15,11 +15,25 @@ export function getPlaces() {
   return request<PlacesResponse>("/api/places");
 }
 
-export function getRatedRoutes(start: string, destination: string, startCoordinates?: Coordinates | null) {
+export function searchPlaces(query: string) {
+  const params = new URLSearchParams({ q: query });
+  return request<GeocodeResponse>(`/api/geocode?${params.toString()}`);
+}
+
+export function getRatedRoutes(
+  start: string,
+  destination: string,
+  startCoordinates?: Coordinates | null,
+  destinationCoordinates?: Coordinates | null
+) {
   const query = new URLSearchParams({ start, destination });
   if (startCoordinates) {
     query.set("startLat", String(startCoordinates[0]));
     query.set("startLng", String(startCoordinates[1]));
+  }
+  if (destinationCoordinates) {
+    query.set("destinationLat", String(destinationCoordinates[0]));
+    query.set("destinationLng", String(destinationCoordinates[1]));
   }
   return request<RatingResponse>(`/api/routes/sensory-rating?${query.toString()}`);
 }

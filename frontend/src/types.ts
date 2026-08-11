@@ -44,6 +44,10 @@ export interface PlacesResponse {
   destinations: Place[];
 }
 
+export interface GeocodeResponse {
+  results: Place[];
+}
+
 export interface DataStatus {
   source: string;
   is_fallback: boolean;

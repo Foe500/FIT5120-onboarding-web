@@ -12,7 +12,7 @@ import {
   Search,
   Waves
 } from "lucide-react";
-import { getPlaces, getRatedRoutes } from "./api";
+import { getPlaces, getRatedRoutes, searchPlaces } from "./api";
 import RouteCard from "./components/RouteCard";
 import RouteMap from "./components/RouteMap";
 import type { Coordinates, Place, RatingResponse } from "./types";
@@ -29,6 +29,10 @@ export default function App() {
   const [destinations, setDestinations] = useState<Place[]>([]);
   const [startInput, setStartInput] = useState(defaultStart);
   const [destinationInput, setDestinationInput] = useState("");
+  const [selectedDestination, setSelectedDestination] = useState<Place | null>(null);
+  const [placeResults, setPlaceResults] = useState<Place[]>([]);
+  const [searchingPlaces, setSearchingPlaces] = useState(false);
+  const [placeSearchMessage, setPlaceSearchMessage] = useState("");
   const [routeData, setRouteData] = useState<RatingResponse | null>(null);
   const [selectedRouteId, setSelectedRouteId] = useState("");
   const [expandedRouteId, setExpandedRouteId] = useState("");
@@ -52,7 +56,12 @@ export default function App() {
     return routeData.routes.find((route) => route.id === selectedRouteId) ?? routeData.routes[0];
   }, [routeData, selectedRouteId]);
 
-  async function loadRoutes(start: string, destination: string, startCoordinates = currentCoordinates) {
+  async function loadRoutes(
+    start: string,
+    destination: string,
+    startCoordinates = currentCoordinates,
+    destinationPlace = selectedDestination
+  ) {
     if (!destination.trim()) {
       setError("Enter a destination in Melbourne CBD to continue.");
       return;
@@ -61,7 +70,8 @@ export default function App() {
     setLoading(true);
     setError("");
     try {
-      const payload = await getRatedRoutes(start, destination, startCoordinates);
+      const searchedCoordinates = destinationPlace?.id.startsWith("osm-") ? destinationPlace.coordinates : null;
+      const payload = await getRatedRoutes(start, destination, startCoordinates, searchedCoordinates);
       setRouteData(payload);
       setSelectedRouteId(payload.routes[0]?.id ?? "");
       setExpandedRouteId(payload.routes[0]?.id ?? "");
@@ -73,9 +83,48 @@ export default function App() {
     }
   }
 
-  function submitSearch(event: React.FormEvent<HTMLFormElement>) {
+  async function submitSearch(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    void loadRoutes(startInput, destinationInput);
+    const value = destinationInput.trim();
+    if (!value) {
+      setError("Enter a destination in Melbourne CBD to continue.");
+      return;
+    }
+
+    const preset = destinations.find((destination) => destination.name.toLowerCase() === value.toLowerCase());
+    if (selectedDestination && selectedDestination.name === destinationInput) {
+      await loadRoutes(startInput, destinationInput, currentCoordinates, selectedDestination);
+      return;
+    }
+    if (preset) {
+      setSelectedDestination(preset);
+      await loadRoutes(startInput, preset.name, currentCoordinates, preset);
+      return;
+    }
+
+    setSearchingPlaces(true);
+    setError("");
+    setPlaceSearchMessage("");
+    try {
+      const payload = await searchPlaces(value);
+      setPlaceResults(payload.results);
+      setPlaceSearchMessage(payload.results.length
+        ? "Choose the correct place to calculate its walking routes."
+        : "No matching places were found within Melbourne CBD.");
+    } catch (requestError) {
+      setPlaceResults([]);
+      setError(requestError instanceof Error ? requestError.message : "Places could not be searched.");
+    } finally {
+      setSearchingPlaces(false);
+    }
+  }
+
+  function selectSearchedDestination(destination: Place) {
+    setSelectedDestination(destination);
+    setDestinationInput(destination.name);
+    setPlaceResults([]);
+    setPlaceSearchMessage("");
+    void loadRoutes(startInput, destination.name, currentCoordinates, destination);
   }
 
   function useCurrentLocation() {
@@ -99,7 +148,7 @@ export default function App() {
         setCurrentCoordinates(coordinates);
         setStartInput("Current location");
         setLocating(false);
-        if (routeData) void loadRoutes("Current location", destinationInput, coordinates);
+        if (routeData) void loadRoutes("Current location", destinationInput, coordinates, selectedDestination);
       },
       (geolocationError) => {
         const message = geolocationError.code === geolocationError.PERMISSION_DENIED
@@ -116,8 +165,11 @@ export default function App() {
   }
 
   function chooseDestination(destination: Place) {
+    setSelectedDestination(destination);
     setDestinationInput(destination.name);
-    if (routeData) void loadRoutes(startInput, destination.name);
+    setPlaceResults([]);
+    setPlaceSearchMessage("");
+    if (routeData) void loadRoutes(startInput, destination.name, currentCoordinates, destination);
   }
 
   function chooseStart(start: Place) {
@@ -130,6 +182,9 @@ export default function App() {
   function resetPlanner() {
     setRouteData(null);
     setDestinationInput("");
+    setSelectedDestination(null);
+    setPlaceResults([]);
+    setPlaceSearchMessage("");
     setSelectedRouteId("");
     setExpandedRouteId("");
     setError("");
@@ -219,27 +274,45 @@ export default function App() {
                     id="destination"
                     list="destination-options"
                     value={destinationInput}
-                    onChange={(event) => setDestinationInput(event.target.value)}
+                    onChange={(event) => {
+                      setDestinationInput(event.target.value);
+                      setSelectedDestination(null);
+                      setPlaceResults([]);
+                      setPlaceSearchMessage("");
+                      setError("");
+                    }}
                     placeholder="Search destination"
                     autoComplete="off"
                   />
                 </div>
+                {placeSearchMessage && <span className="place-search-message" role="status">{placeSearchMessage}</span>}
+                {placeResults.length > 0 && (
+                  <div className="place-results" aria-label="Matching destinations">
+                    {placeResults.map((destination) => (
+                      <button type="button" key={destination.id} onClick={() => selectSearchedDestination(destination)}>
+                        <MapPin size={16} aria-hidden="true" />
+                        <span><strong>{destination.name}</strong><small>{destination.address}</small></span>
+                      </button>
+                    ))}
+                  </div>
+                )}
                 <div className="suggestion-row" aria-label="Popular destinations">
                   {destinations.slice(0, 3).map((destination) => (
-                    <button type="button" key={destination.id} onClick={() => setDestinationInput(destination.name)}>
+                    <button type="button" key={destination.id} onClick={() => chooseDestination(destination)}>
                       {destination.name}
                     </button>
                   ))}
                 </div>
+                <a className="geocoding-attribution" href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">Place search © OpenStreetMap contributors</a>
               </div>
               <datalist id="destination-options">
                 {destinations.map((destination) => <option key={destination.id} value={destination.name} />)}
               </datalist>
 
               {error && <div className="form-error" role="alert">{error}</div>}
-              <button className="find-routes-button" type="submit" disabled={loading}>
-                <span>{loading ? "Comparing routes..." : "Compare routes"}</span>
-                <Route size={19} aria-hidden="true" />
+              <button className="find-routes-button" type="submit" disabled={loading || searchingPlaces}>
+                <span>{searchingPlaces ? "Searching places..." : loading ? "Comparing routes..." : selectedDestination ? "Compare routes" : "Search places"}</span>
+                {selectedDestination ? <Route size={19} aria-hidden="true" /> : <Search size={19} aria-hidden="true" />}
               </button>
             </form>
           </section>
@@ -253,7 +326,7 @@ export default function App() {
                   <p className="eyebrow">Walking routes</p>
                   <h2>{routeData.destination.name}</h2>
                 </div>
-                <button type="button" className="icon-button" aria-label="Refresh route sensory ratings" title="Refresh ratings" onClick={() => void loadRoutes(startInput, destinationInput)}>
+                <button type="button" className="icon-button" aria-label="Refresh route sensory ratings" title="Refresh ratings" onClick={() => void loadRoutes(startInput, destinationInput, currentCoordinates, selectedDestination)}>
                   <RefreshCw size={17} aria-hidden="true" />
                 </button>
               </div>

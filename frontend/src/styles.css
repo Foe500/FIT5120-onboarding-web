@@ -85,6 +85,17 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 3px solid 
 .suggestion-row { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
 .suggestion-row button { padding: 4px 6px; border: 1px solid rgba(255, 255, 255, 0.25); border-radius: 5px; color: #ccdae1; background: transparent; font-size: 0.59rem; }
 .suggestion-row button:hover { border-color: #79dcc4; color: #fff; }
+.place-search-message { display: block; margin-top: 7px; color: #b9cbd3; font-size: 0.64rem; line-height: 1.4; }
+.place-results { display: grid; max-height: 230px; margin-top: 8px; overflow-y: auto; border: 1px solid rgba(255, 255, 255, 0.22); border-radius: 6px; background: #fff; box-shadow: 0 12px 24px rgba(3, 22, 31, 0.2); }
+.place-results button { width: 100%; display: flex; align-items: flex-start; gap: 9px; padding: 10px 11px; border: 0; border-bottom: 1px solid #e1e8e4; color: var(--ink); background: #fff; text-align: left; }
+.place-results button:last-child { border-bottom: 0; }
+.place-results button:hover, .place-results button:focus-visible { background: #eef8f4; }
+.place-results svg { flex: 0 0 auto; margin-top: 2px; color: var(--teal-dark); }
+.place-results span, .place-results strong, .place-results small { display: block; min-width: 0; }
+.place-results strong { font-size: 0.72rem; line-height: 1.35; }
+.place-results small { margin-top: 2px; overflow-wrap: anywhere; color: #65766e; font-size: 0.62rem; line-height: 1.35; }
+.geocoding-attribution { display: inline-block; margin-top: 7px; color: #a9c9c0; font-size: 0.58rem; }
+.geocoding-attribution:hover { color: #fff; }
 .form-error { grid-column: 1 / -1; padding: 8px 10px; border-left: 3px solid #ed9c79; color: #ffe3d8; background: rgba(181, 84, 49, 0.22); font-size: 0.72rem; line-height: 1.4; }
 .find-routes-button { min-width: 142px; height: 50px; display: inline-flex; align-items: center; justify-content: space-between; gap: 18px; margin-top: 38px; padding: 0 15px; border: 0; border-radius: 6px; color: #fff; background: var(--teal); font-size: 0.75rem; font-weight: 850; }
 .find-routes-button:hover { background: #0d8a6e; }
