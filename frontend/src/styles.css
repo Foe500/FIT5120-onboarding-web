@@ -32,12 +32,13 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 3px solid 
   height: 72px;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 32px;
   padding: 0 clamp(24px, 6vw, 88px);
   border-bottom: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.96);
 }
-.brand-lockup { display: flex; align-items: center; gap: 9px; text-decoration: none; }
+.brand-lockup { display: flex; align-items: center; gap: 9px; padding: 0; border: 0; color: inherit; background: none; text-decoration: none; }
 .brand-mark { width: 31px; height: 31px; display: grid; place-items: center; border-radius: 50%; color: #fff; background: var(--teal); font-family: Georgia, serif; font-weight: 700; }
 .brand-name { font-size: 1.18rem; font-weight: 850; }
 .brand-name span { color: var(--teal); }
@@ -45,6 +46,47 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 3px solid 
 .topbar nav a { display: flex; align-items: center; border-bottom: 2px solid transparent; color: var(--muted); text-decoration: none; font-size: 0.82rem; font-weight: 650; }
 .topbar nav a:first-child { border-color: var(--teal); color: var(--ink); }
 .city-label { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-size: 0.72rem; font-weight: 800; text-transform: uppercase; }
+.new-journey-button { min-height: 38px; display: inline-flex; align-items: center; gap: 7px; padding: 0 12px; border: 1px solid #cbd7d1; border-radius: 6px; color: var(--teal-dark); background: #f7fbf9; font-size: 0.76rem; font-weight: 750; }
+
+.onboarding-page {
+  min-height: calc(100vh - 124px);
+  width: min(1180px, calc(100% - 48px));
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(420px, 1.1fr);
+  align-items: center;
+  gap: clamp(54px, 8vw, 112px);
+  margin: 0 auto;
+  padding: 64px 0;
+}
+.welcome-panel h1 { margin: 4px 0 42px; color: var(--ink); font-size: clamp(4rem, 7vw, 6rem); line-height: 0.9; letter-spacing: 0; }
+.location-summary { display: flex; align-items: center; gap: 14px; }
+.location-icon { width: 48px; height: 48px; flex: 0 0 auto; display: grid; place-items: center; border-radius: 50%; color: #0c9186; background: #dff6f2; }
+.location-summary span:not(.location-icon), .location-summary strong { display: block; }
+.location-summary span:not(.location-icon) { color: var(--muted); font-size: 0.78rem; }
+.location-summary strong { margin-top: 3px; font-size: 1.02rem; }
+.welcome-note { max-width: 430px; margin: 18px 0 38px; color: var(--muted); font-size: 0.82rem; line-height: 1.55; }
+.coverage-list { max-width: 430px; margin: 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.coverage-list div { display: flex; justify-content: space-between; gap: 20px; padding: 14px 0; }
+.coverage-list div + div { border-top: 1px solid #edf1ef; }
+.coverage-list dt { font-weight: 800; }
+.coverage-list dd { margin: 0; color: #344b55; text-align: right; }
+
+.journey-card { padding: clamp(34px, 5vw, 54px); border: 1px solid #d6e6e1; border-radius: 8px; background: #f3f8f6; box-shadow: 0 18px 42px rgba(30, 78, 68, 0.1); }
+.journey-card h2 { margin: 0; color: var(--ink); font-size: clamp(2.35rem, 4vw, 3.2rem); line-height: 1.02; letter-spacing: 0; }
+.journey-intro { max-width: 450px; margin: 18px 0 28px; color: var(--muted); line-height: 1.55; }
+.journey-form { display: grid; }
+.journey-form label { margin-top: 13px; color: #4d6570; font-size: 0.7rem; font-weight: 850; text-transform: uppercase; }
+.field-context { margin: 5px 0 8px; color: #4f6470; font-size: 0.74rem; }
+.search-field { height: 54px; display: flex; align-items: center; gap: 10px; padding: 0 16px; border: 2px solid #20aea3; border-radius: 8px; color: #087c73; background: #fff; }
+.search-field:focus-within { border-color: var(--navy); box-shadow: 0 0 0 3px rgba(25, 61, 90, 0.1); }
+.search-field input { flex: 1; min-width: 0; border: 0; outline: 0; color: var(--ink); background: transparent; }
+.suggestion-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.suggestion-row button { padding: 5px 8px; border: 1px solid #cfe0da; border-radius: 6px; color: #426157; background: #fff; font-size: 0.66rem; }
+.form-error { margin-top: 12px; padding: 9px 11px; border-left: 3px solid var(--rust); color: #8d3f25; background: #fff4ef; font-size: 0.76rem; line-height: 1.4; }
+.find-routes-button { min-height: 52px; margin-top: 17px; border: 0; border-radius: 8px; color: #fff; background: #28afa6; box-shadow: 0 10px 24px rgba(40, 175, 166, 0.2); font-weight: 850; }
+.find-routes-button:hover { background: #148f87; }
+.find-routes-button:disabled { cursor: wait; opacity: 0.65; }
+.results-page .planner { margin-top: 36px; }
 
 .hero {
   position: relative;
@@ -159,6 +201,9 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 3px solid 
 .site-footer { display: flex; justify-content: space-between; gap: 20px; padding: 21px max(8vw, 34px); border-top: 1px solid var(--line); color: #74837b; font-size: 0.7rem; }
 
 @media (max-width: 920px) {
+  .onboarding-page { grid-template-columns: 1fr; gap: 42px; padding: 48px 0 64px; }
+  .welcome-panel { max-width: 620px; }
+  .welcome-panel h1 { margin-bottom: 30px; }
   .hero { grid-template-columns: 1fr; }
   .hero-metrics { display: none; }
   .planner { grid-template-columns: 1fr; }
@@ -170,6 +215,13 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 3px solid 
 @media (max-width: 640px) {
   .topbar { height: 62px; padding: 0 17px; }
   .topbar nav, .city-label { display: none; }
+  .new-journey-button { width: 38px; padding: 0; justify-content: center; font-size: 0; }
+  .onboarding-page { min-height: auto; width: calc(100% - 30px); gap: 34px; padding: 38px 0 48px; }
+  .welcome-panel h1 { margin: 2px 0 26px; font-size: 3.8rem; }
+  .welcome-note { margin-bottom: 26px; }
+  .journey-card { padding: 27px 20px; }
+  .journey-card h2 { font-size: 2.25rem; }
+  .journey-intro { margin: 14px 0 20px; font-size: 0.84rem; }
   .hero { min-height: 335px; padding: 46px 20px 72px; background: #e3f0ea; }
   .hero::after { right: -95px; top: 25px; width: 190px; height: 190px; }
   .hero h1 { font-size: clamp(2.35rem, 14vw, 3.35rem); }
