@@ -80,6 +80,14 @@ Example:
 /api/routes/sensory-rating?start=Melbourne%20Town%20Hall&destination=State%20Library%20Victoria
 ```
 
+Current-location requests include browser-provided coordinates:
+
+```text
+/api/routes/sensory-rating?start=Current%20location&destination=State%20Library%20Victoria&startLat=-37.8136&startLng=144.9631
+```
+
+Both coordinate fields are required and must fall within the prototype's Melbourne CBD coverage area. Browser geolocation is available on `localhost` and HTTPS deployments after the user grants permission.
+
 ## Sensory Rating Rule
 
 Initial onboarding rule:
@@ -115,8 +123,8 @@ The prototype does not require private API keys. City of Melbourne data is publi
 
 - Preset Melbourne CBD routes for onboarding demonstration
 - Preset destination recognition instead of full geocoding
-- Demo current-location button using Melbourne Town Hall
+- Browser geolocation for dynamic starting coordinates within Melbourne CBD
 - Approximate sensor-to-route matching
 - Rating based on pedestrian crowd density only
 
-Future iterations can add real browser geolocation, a routing provider, event data, construction disruptions, noise data, lighting conditions, and personalised sensory thresholds.
+Future iterations can add a street-aware routing provider, reverse geocoding, event data, construction disruptions, noise data, lighting conditions, and personalised sensory thresholds.
