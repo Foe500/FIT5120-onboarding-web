@@ -113,73 +113,75 @@ export default function App() {
 
       {!routeData ? (
         <main className="onboarding-page">
-          <section className="welcome-panel" aria-labelledby="welcome-heading">
-            <p className="eyebrow">Building sensory-friendly urban futures</p>
-            <h1 id="welcome-heading">Welcome!</h1>
-            <div className="location-summary">
-              <span className="location-icon"><MapPin size={23} aria-hidden="true" /></span>
-              <div>
-                <span>Starting from</span>
-                <strong>{startInput || "Choose a starting point"}</strong>
-              </div>
+          <section className="onboarding-intro" aria-labelledby="welcome-heading">
+            <div className="intro-copy">
+              <p className="eyebrow">Sensory-aware route planning</p>
+              <h1 id="welcome-heading">A calmer way<br />through Melbourne.</h1>
+              <p>Choose where you are going, then compare walking routes using nearby pedestrian activity and clear sensory evidence.</p>
             </div>
-            <p className="welcome-note">Plan a walking journey with clearer information about pedestrian activity and sensory load.</p>
-            <dl className="coverage-list">
-              <div><dt>Route data</dt><dd>Live and historical</dd></div>
-              <div><dt>Coverage</dt><dd>Melbourne CBD</dd></div>
-              <div><dt>Sensory levels</dt><dd>Low and High</dd></div>
+            <dl className="city-signal" aria-label="Route planner coverage">
+              <div><dt>City coverage</dt><dd>Melbourne CBD</dd></div>
+              <div><dt>Data signal</dt><dd><span className="live-dot" /> Live open data</dd></div>
+              <div><dt>Route language</dt><dd>Low / High load</dd></div>
             </dl>
           </section>
 
-          <section className="journey-card" aria-labelledby="journey-heading">
-            <p className="eyebrow">Plan a calmer journey</p>
-            <h2 id="journey-heading">Where would you<br />like to go?</h2>
-            <p className="journey-intro">We will compare walking routes using pedestrian activity and sensory information.</p>
-
+          <section className="journey-panel" aria-labelledby="journey-heading">
+            <div className="journey-heading">
+              <span className="step-number">01</span>
+              <p className="eyebrow">Start your journey</p>
+              <h2 id="journey-heading">Tell us where<br />you are headed.</h2>
+              <p>The map stays out of the way until your journey is ready.</p>
+            </div>
             <form className="journey-form" onSubmit={submitSearch}>
-              <label htmlFor="start">Starting point</label>
-              <span className="field-context">Choose a known location in Melbourne CBD</span>
-              <div className="search-field">
-                <input
-                  id="start"
-                  list="start-options"
-                  value={startInput}
-                  onChange={(event) => setStartInput(event.target.value)}
-                  placeholder="Search starting point"
-                />
-                <Search size={21} aria-hidden="true" />
+              <div className="field-group">
+                <label htmlFor="start">Starting point</label>
+                <span className="field-context">Where the walk begins</span>
+                <div className="search-field">
+                  <MapPin size={19} aria-hidden="true" />
+                  <input
+                    id="start"
+                    list="start-options"
+                    value={startInput}
+                    onChange={(event) => setStartInput(event.target.value)}
+                    placeholder="Search starting point"
+                  />
+                </div>
               </div>
               <datalist id="start-options">
                 {starts.map((start) => <option key={start.id} value={start.name} />)}
               </datalist>
 
-              <label htmlFor="destination">Destination</label>
-              <div className="search-field">
-                <input
-                  id="destination"
-                  list="destination-options"
-                  value={destinationInput}
-                  onChange={(event) => setDestinationInput(event.target.value)}
-                  placeholder="Search destination"
-                  autoComplete="off"
-                />
-                <Search size={21} aria-hidden="true" />
+              <div className="field-group destination-group">
+                <label htmlFor="destination">Destination</label>
+                <span className="field-context">Where you want to arrive</span>
+                <div className="search-field">
+                  <Search size={19} aria-hidden="true" />
+                  <input
+                    id="destination"
+                    list="destination-options"
+                    value={destinationInput}
+                    onChange={(event) => setDestinationInput(event.target.value)}
+                    placeholder="Search destination"
+                    autoComplete="off"
+                  />
+                </div>
+                <div className="suggestion-row" aria-label="Popular destinations">
+                  {destinations.slice(0, 3).map((destination) => (
+                    <button type="button" key={destination.id} onClick={() => setDestinationInput(destination.name)}>
+                      {destination.name}
+                    </button>
+                  ))}
+                </div>
               </div>
               <datalist id="destination-options">
                 {destinations.map((destination) => <option key={destination.id} value={destination.name} />)}
               </datalist>
 
-              <div className="suggestion-row" aria-label="Popular destinations">
-                {destinations.slice(0, 3).map((destination) => (
-                  <button type="button" key={destination.id} onClick={() => setDestinationInput(destination.name)}>
-                    {destination.name}
-                  </button>
-                ))}
-              </div>
-
               {error && <div className="form-error" role="alert">{error}</div>}
               <button className="find-routes-button" type="submit" disabled={loading}>
-                {loading ? "Comparing routes..." : "Find routes"}
+                <span>{loading ? "Comparing routes..." : "Compare routes"}</span>
+                <Route size={19} aria-hidden="true" />
               </button>
             </form>
           </section>
