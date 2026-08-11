@@ -100,6 +100,7 @@ app.get("/api/routes/sensory-rating", async (request, response) => {
     rating_rule: {
       low: "average pedestrian count < 50",
       high: "average pedestrian count >= 50",
+      unknown: "no pedestrian sensors within 180 metres of the route",
       source_fields: ["location_id", "sensor_id", "total_of_directions", "latitude", "longitude"]
     }
   });

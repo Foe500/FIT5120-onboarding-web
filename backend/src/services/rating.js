@@ -15,16 +15,17 @@ export function rateRoute(route, sensors) {
     .filter((sensor) => sensor.distance_to_route_meters <= NEAR_ROUTE_THRESHOLD_METRES)
     .sort((a, b) => b.total_of_directions - a.total_of_directions);
 
-  const countedSensors = nearbySensors.length > 0 ? nearbySensors : sensors.slice(0, 3);
+  const countedSensors = nearbySensors;
+  const hasNearbyEvidence = countedSensors.length > 0;
   const average =
-    countedSensors.length === 0
-      ? 0
+    !hasNearbyEvidence
+      ? null
       : countedSensors.reduce((sum, sensor) => sum + Number(sensor.total_of_directions || 0), 0) / countedSensors.length;
   const highest =
-    countedSensors.length === 0
-      ? 0
+    !hasNearbyEvidence
+      ? null
       : Math.max(...countedSensors.map((sensor) => Number(sensor.total_of_directions || 0)));
-  const sensoryLevel = levelFromAverage(average);
+  const sensoryLevel = hasNearbyEvidence ? levelFromAverage(average) : "Unknown";
 
   const topSensorNames = countedSensors
     .slice(0, 3)
@@ -42,12 +43,13 @@ export function rateRoute(route, sensors) {
     walking_time_minutes: route.walking_time_minutes,
     distance_meters: route.distance_meters,
     sensory_level: sensoryLevel,
-    average_pedestrian_count: Math.round(average),
-    highest_pedestrian_count: Math.round(highest),
+    average_pedestrian_count: average === null ? null : Math.round(average),
+    highest_pedestrian_count: highest === null ? null : Math.round(highest),
     nearby_sensor_count: countedSensors.length,
     nearby_sensors: countedSensors.slice(0, 8),
-    explanation:
-      sensoryLevel === "High"
+    explanation: !hasNearbyEvidence
+      ? `This route does not have a High or Low rating because no pedestrian sensors were found within ${NEAR_ROUTE_THRESHOLD_METRES} metres of its path. No unrelated sensors were used. More local data is needed before its sensory load can be assessed.`
+      : sensoryLevel === "High"
         ? `This route is rated High because ${countedSensors.length} nearby pedestrian sensor(s) show an average of ${Math.round(
             average
           )} people per minute. The highest nearby sensor count is ${Math.round(
