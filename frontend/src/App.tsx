@@ -28,10 +28,13 @@ export default function App() {
   const [starts, setStarts] = useState<Place[]>([]);
   const [destinations, setDestinations] = useState<Place[]>([]);
   const [startInput, setStartInput] = useState(defaultStart);
+  const [selectedStart, setSelectedStart] = useState<Place | null>(null);
+  const [startPlaceResults, setStartPlaceResults] = useState<Place[]>([]);
+  const [startSearchMessage, setStartSearchMessage] = useState("");
   const [destinationInput, setDestinationInput] = useState("");
   const [selectedDestination, setSelectedDestination] = useState<Place | null>(null);
   const [placeResults, setPlaceResults] = useState<Place[]>([]);
-  const [searchingPlaces, setSearchingPlaces] = useState(false);
+  const [searchingField, setSearchingField] = useState<"start" | "destination" | null>(null);
   const [placeSearchMessage, setPlaceSearchMessage] = useState("");
   const [routeData, setRouteData] = useState<RatingResponse | null>(null);
   const [selectedRouteId, setSelectedRouteId] = useState("");
@@ -56,11 +59,22 @@ export default function App() {
     return routeData.routes.find((route) => route.id === selectedRouteId) ?? routeData.routes[0];
   }, [routeData, selectedRouteId]);
 
+  const startIsReady = Boolean(
+    currentCoordinates
+    || (selectedStart && selectedStart.name === startInput)
+    || starts.some((start) => start.name.toLowerCase() === startInput.trim().toLowerCase())
+  );
+  const destinationIsReady = Boolean(
+    (selectedDestination && selectedDestination.name === destinationInput)
+    || destinations.some((destination) => destination.name.toLowerCase() === destinationInput.trim().toLowerCase())
+  );
+
   async function loadRoutes(
     start: string,
     destination: string,
     startCoordinates = currentCoordinates,
-    destinationPlace = selectedDestination
+    destinationPlace = selectedDestination,
+    startPlace = selectedStart
   ) {
     if (!destination.trim()) {
       setError("Enter a destination in Melbourne CBD to continue.");
@@ -70,8 +84,10 @@ export default function App() {
     setLoading(true);
     setError("");
     try {
+      const searchedStartCoordinates = startCoordinates
+        ?? (startPlace?.id.startsWith("osm-") ? startPlace.coordinates : null);
       const searchedCoordinates = destinationPlace?.id.startsWith("osm-") ? destinationPlace.coordinates : null;
-      const payload = await getRatedRoutes(start, destination, startCoordinates, searchedCoordinates);
+      const payload = await getRatedRoutes(start, destination, searchedStartCoordinates, searchedCoordinates);
       setRouteData(payload);
       setSelectedRouteId(payload.routes[0]?.id ?? "");
       setExpandedRouteId(payload.routes[0]?.id ?? "");
@@ -85,28 +101,53 @@ export default function App() {
 
   async function submitSearch(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const value = destinationInput.trim();
-    if (!value) {
+    const startValue = startInput.trim();
+    const destinationValue = destinationInput.trim();
+    if (!startValue) {
+      setError("Enter a starting point in Melbourne CBD or use your current location.");
+      return;
+    }
+    if (!destinationValue) {
       setError("Enter a destination in Melbourne CBD to continue.");
       return;
     }
 
-    const preset = destinations.find((destination) => destination.name.toLowerCase() === value.toLowerCase());
-    if (selectedDestination && selectedDestination.name === destinationInput) {
-      await loadRoutes(startInput, destinationInput, currentCoordinates, selectedDestination);
-      return;
-    }
-    if (preset) {
-      setSelectedDestination(preset);
-      await loadRoutes(startInput, preset.name, currentCoordinates, preset);
+    const startPreset = starts.find((start) => start.name.toLowerCase() === startValue.toLowerCase());
+    const resolvedStart = selectedStart?.name === startInput ? selectedStart : startPreset ?? null;
+    if (!currentCoordinates && !resolvedStart) {
+      setSearchingField("start");
+      setError("");
+      setStartSearchMessage("");
+      try {
+        const payload = await searchPlaces(startValue);
+        setStartPlaceResults(payload.results);
+        setStartSearchMessage(payload.results.length
+          ? "Choose the correct starting point, then continue your search."
+          : "No matching starting points were found within Melbourne CBD.");
+      } catch (requestError) {
+        setStartPlaceResults([]);
+        setError(requestError instanceof Error ? requestError.message : "Starting points could not be searched.");
+      } finally {
+        setSearchingField(null);
+      }
       return;
     }
 
-    setSearchingPlaces(true);
+    if (startPreset && selectedStart !== startPreset) setSelectedStart(startPreset);
+
+    const destinationPreset = destinations.find((destination) => destination.name.toLowerCase() === destinationValue.toLowerCase());
+    const resolvedDestination = selectedDestination?.name === destinationInput ? selectedDestination : destinationPreset ?? null;
+    if (resolvedDestination) {
+      setSelectedDestination(resolvedDestination);
+      await loadRoutes(startInput, resolvedDestination.name, currentCoordinates, resolvedDestination, resolvedStart);
+      return;
+    }
+
+    setSearchingField("destination");
     setError("");
     setPlaceSearchMessage("");
     try {
-      const payload = await searchPlaces(value);
+      const payload = await searchPlaces(destinationValue);
       setPlaceResults(payload.results);
       setPlaceSearchMessage(payload.results.length
         ? "Choose the correct place to calculate its walking routes."
@@ -115,8 +156,18 @@ export default function App() {
       setPlaceResults([]);
       setError(requestError instanceof Error ? requestError.message : "Places could not be searched.");
     } finally {
-      setSearchingPlaces(false);
+      setSearchingField(null);
     }
+  }
+
+  function selectSearchedStart(start: Place) {
+    setSelectedStart(start);
+    setStartInput(start.name);
+    setCurrentCoordinates(null);
+    setStartPlaceResults([]);
+    setStartSearchMessage("");
+    setLocationError("");
+    setError("");
   }
 
   function selectSearchedDestination(destination: Place) {
@@ -124,11 +175,14 @@ export default function App() {
     setDestinationInput(destination.name);
     setPlaceResults([]);
     setPlaceSearchMessage("");
-    void loadRoutes(startInput, destination.name, currentCoordinates, destination);
+    void loadRoutes(startInput, destination.name, currentCoordinates, destination, selectedStart);
   }
 
   function useCurrentLocation() {
     setLocationError("");
+    setSelectedStart(null);
+    setStartPlaceResults([]);
+    setStartSearchMessage("");
     if (!navigator.geolocation) {
       setLocationError("Location is not supported by this browser.");
       return;
@@ -148,7 +202,7 @@ export default function App() {
         setCurrentCoordinates(coordinates);
         setStartInput("Current location");
         setLocating(false);
-        if (routeData) void loadRoutes("Current location", destinationInput, coordinates, selectedDestination);
+        if (routeData) void loadRoutes("Current location", destinationInput, coordinates, selectedDestination, null);
       },
       (geolocationError) => {
         const message = geolocationError.code === geolocationError.PERMISSION_DENIED
@@ -169,18 +223,24 @@ export default function App() {
     setDestinationInput(destination.name);
     setPlaceResults([]);
     setPlaceSearchMessage("");
-    if (routeData) void loadRoutes(startInput, destination.name, currentCoordinates, destination);
+    if (routeData) void loadRoutes(startInput, destination.name, currentCoordinates, destination, selectedStart);
   }
 
   function chooseStart(start: Place) {
     setCurrentCoordinates(null);
+    setSelectedStart(start);
+    setStartPlaceResults([]);
+    setStartSearchMessage("");
     setLocationError("");
     setStartInput(start.name);
-    if (routeData) void loadRoutes(start.name, destinationInput, null);
+    if (routeData) void loadRoutes(start.name, destinationInput, null, selectedDestination, start);
   }
 
   function resetPlanner() {
     setRouteData(null);
+    setSelectedStart(null);
+    setStartPlaceResults([]);
+    setStartSearchMessage("");
     setDestinationInput("");
     setSelectedDestination(null);
     setPlaceResults([]);
@@ -242,8 +302,12 @@ export default function App() {
                     value={startInput}
                     onChange={(event) => {
                       setStartInput(event.target.value);
+                      setSelectedStart(null);
                       setCurrentCoordinates(null);
+                      setStartPlaceResults([]);
+                      setStartSearchMessage("");
                       setLocationError("");
+                      setError("");
                     }}
                     placeholder="Search starting point"
                   />
@@ -259,7 +323,20 @@ export default function App() {
                   </button>
                 </div>
                 {currentCoordinates && <span className="field-message success" role="status">Current location ready</span>}
+                {selectedStart?.id.startsWith("osm-") && <span className="field-message success" role="status">Starting point selected</span>}
                 {locationError && <span className="field-message error" role="alert">{locationError}</span>}
+                {startSearchMessage && <span className="place-search-message" role="status">{startSearchMessage}</span>}
+                {startPlaceResults.length > 0 && (
+                  <div className="place-results" aria-label="Matching starting points">
+                    {startPlaceResults.map((start) => (
+                      <button type="button" key={start.id} onClick={() => selectSearchedStart(start)}>
+                        <MapPin size={16} aria-hidden="true" />
+                        <span><strong>{start.name}</strong><small>{start.address}</small></span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+                <a className="geocoding-attribution" href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">Place search © OpenStreetMap contributors</a>
               </div>
               <datalist id="start-options">
                 {starts.map((start) => <option key={start.id} value={start.name} />)}
@@ -310,9 +387,9 @@ export default function App() {
               </datalist>
 
               {error && <div className="form-error" role="alert">{error}</div>}
-              <button className="find-routes-button" type="submit" disabled={loading || searchingPlaces}>
-                <span>{searchingPlaces ? "Searching places..." : loading ? "Comparing routes..." : selectedDestination ? "Compare routes" : "Search places"}</span>
-                {selectedDestination ? <Route size={19} aria-hidden="true" /> : <Search size={19} aria-hidden="true" />}
+              <button className="find-routes-button" type="submit" disabled={loading || searchingField !== null}>
+                <span>{searchingField === "start" ? "Searching starting points..." : searchingField === "destination" ? "Searching destinations..." : loading ? "Comparing routes..." : !startIsReady ? "Search starting point" : !destinationIsReady ? "Search destination" : "Compare routes"}</span>
+                {startIsReady && destinationIsReady ? <Route size={19} aria-hidden="true" /> : <Search size={19} aria-hidden="true" />}
               </button>
             </form>
           </section>
@@ -339,6 +416,7 @@ export default function App() {
                     value={startInput}
                     onChange={(event) => {
                       setStartInput(event.target.value);
+                      setSelectedStart(null);
                       setCurrentCoordinates(null);
                       setLocationError("");
                     }}

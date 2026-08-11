@@ -8,13 +8,16 @@ export async function resolveRouteRequest(startQuery, destinationQuery, startCoo
 
   if (startCoordinates) {
     if (!isWithinCbd(startCoordinates)) {
-      throw new RangeError("Current location must be within Melbourne CBD.");
+      throw new RangeError("The starting point must be within Melbourne CBD.");
     }
 
+    const isCurrentLocation = String(startQuery || "").trim().toLowerCase() === "current location";
     start = {
-      id: "current-location",
-      name: "Current location",
-      address: "Browser-provided location within Melbourne CBD",
+      id: isCurrentLocation ? "current-location" : `searched-start-${startCoordinates.join("-")}`,
+      name: isCurrentLocation ? "Current location" : String(startQuery || "Selected starting point").trim(),
+      address: isCurrentLocation
+        ? "Browser-provided location within Melbourne CBD"
+        : "Place selected from OpenStreetMap search",
       coordinates: startCoordinates
     };
   }
