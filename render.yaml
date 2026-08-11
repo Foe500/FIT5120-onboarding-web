@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: fit5120-sensory-routes-api-foe500
+    runtime: node
+    region: singapore
+    plan: free
+    rootDir: backend
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /api/health
+    autoDeployTrigger: commit

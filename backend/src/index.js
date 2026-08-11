@@ -8,8 +8,20 @@ import { resolveRouteRequest } from "./services/routes.js";
 
 const app = express();
 const port = process.env.PORT || 4000;
+const allowedOrigins = String(process.env.FRONTEND_ORIGIN || "")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
 
-app.use(cors());
+app.use(cors({
+  origin(origin, callback) {
+    if (!origin || allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
+      callback(null, true);
+      return;
+    }
+    callback(new Error("This frontend origin is not allowed by CORS."));
+  }
+}));
 app.use(express.json());
 
 function readCoordinates(query, latitudeKey, longitudeKey, label) {
@@ -110,6 +122,6 @@ app.use((_request, response) => {
   response.status(404).json({ error: "API route not found" });
 });
 
-app.listen(port, () => {
+app.listen(port, "0.0.0.0", () => {
   console.log(`Hush API running on http://localhost:${port}`);
 });
