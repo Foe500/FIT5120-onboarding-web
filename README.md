@@ -9,6 +9,7 @@ The app helps sensory-sensitive and neurodivergent commuters compare calmer walk
 - Frontend: React + Vite + TypeScript
 - Map: Leaflet + React Leaflet + OpenStreetMap tiles
 - Backend: Node.js + Express
+- Routing: public FOSSGIS OSRM foot-routing service, with no API key required
 - Data: City of Melbourne pedestrian-counting open data, with local fallback data for reliable demos
 
 ## Project Structure
@@ -88,6 +89,17 @@ Current-location requests include browser-provided coordinates:
 
 Both coordinate fields are required and must fall within the prototype's Melbourne CBD coverage area. Browser geolocation is available on `localhost` and HTTPS deployments after the user grants permission.
 
+## Real Walking Routes
+
+The backend requests street-following walking geometry from the public [FOSSGIS OSRM routing service](https://routing.openstreetmap.de/about.html). The browser never calls the routing provider directly: Express applies a request queue, timeout, and five-minute in-memory cache, then converts OSRM GeoJSON into the route format used by the sensory-rating service.
+
+- No registration or API key is required.
+- Requests are limited to approximately one per second.
+- If live routing is unavailable, the API returns the existing preset routes and marks the response as fallback data.
+- The public endpoint is appropriate for a prototype, not heavy production traffic. Its operator also states that route requests are logged.
+
+The frontend displays whether the current geometry is live or fallback and includes routing attribution beside the map.
+
 ## Sensory Rating Rule
 
 Initial onboarding rule:
@@ -117,14 +129,14 @@ Backend environment:
 PORT=4000
 ```
 
-The prototype does not require private API keys. City of Melbourne data is public, and fallback data keeps the demo usable if the live data service is unavailable.
+The prototype does not require private API keys. City of Melbourne data and the FOSSGIS route endpoint are public, while local route and sensor fallbacks keep the demo usable if either live service is unavailable.
 
 ## Prototype Scope
 
-- Preset Melbourne CBD routes for onboarding demonstration
+- Real street-following walking routes for recognised Melbourne CBD places and valid current-location coordinates
 - Preset destination recognition instead of full geocoding
 - Browser geolocation for dynamic starting coordinates within Melbourne CBD
 - Approximate sensor-to-route matching
 - Rating based on pedestrian crowd density only
 
-Future iterations can add a street-aware routing provider, reverse geocoding, event data, construction disruptions, noise data, lighting conditions, and personalised sensory thresholds.
+Future iterations can add full geocoding, a production routing provider with an SLA, event data, construction disruptions, noise data, lighting conditions, and personalised sensory thresholds.
