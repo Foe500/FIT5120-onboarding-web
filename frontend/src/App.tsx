@@ -15,9 +15,14 @@ import {
 import { getPlaces, getRatedRoutes } from "./api";
 import RouteCard from "./components/RouteCard";
 import RouteMap from "./components/RouteMap";
-import type { Place, RatingResponse } from "./types";
+import type { Coordinates, Place, RatingResponse } from "./types";
 
 const defaultStart = "Melbourne Town Hall";
+const cbdBounds = { north: -37.8005, south: -37.8248, west: 144.946, east: 144.9735 };
+
+function isWithinMelbourneCbd([latitude, longitude]: Coordinates) {
+  return latitude <= cbdBounds.north && latitude >= cbdBounds.south && longitude >= cbdBounds.west && longitude <= cbdBounds.east;
+}
 
 export default function App() {
   const [starts, setStarts] = useState<Place[]>([]);
@@ -29,6 +34,9 @@ export default function App() {
   const [expandedRouteId, setExpandedRouteId] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [currentCoordinates, setCurrentCoordinates] = useState<Coordinates | null>(null);
+  const [locating, setLocating] = useState(false);
+  const [locationError, setLocationError] = useState("");
 
   useEffect(() => {
     getPlaces()
@@ -44,7 +52,7 @@ export default function App() {
     return routeData.routes.find((route) => route.id === selectedRouteId) ?? routeData.routes[0];
   }, [routeData, selectedRouteId]);
 
-  async function loadRoutes(start: string, destination: string) {
+  async function loadRoutes(start: string, destination: string, startCoordinates = currentCoordinates) {
     if (!destination.trim()) {
       setError("Enter a destination in Melbourne CBD to continue.");
       return;
@@ -53,13 +61,13 @@ export default function App() {
     setLoading(true);
     setError("");
     try {
-      const payload = await getRatedRoutes(start, destination);
+      const payload = await getRatedRoutes(start, destination, startCoordinates);
       setRouteData(payload);
       setSelectedRouteId(payload.routes[0]?.id ?? "");
       setExpandedRouteId(payload.routes[0]?.id ?? "");
       requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "smooth" }));
-    } catch {
-      setError("Routes could not be loaded. Please check that the backend is running.");
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : "Routes could not be loaded. Please check that the backend is running.");
     } finally {
       setLoading(false);
     }
@@ -70,9 +78,41 @@ export default function App() {
     void loadRoutes(startInput, destinationInput);
   }
 
-  function useCurrentLocationDemo() {
-    setStartInput(defaultStart);
-    if (routeData) void loadRoutes(defaultStart, destinationInput);
+  function useCurrentLocation() {
+    setLocationError("");
+    if (!navigator.geolocation) {
+      setLocationError("Location is not supported by this browser.");
+      return;
+    }
+
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      ({ coords }) => {
+        const coordinates: Coordinates = [coords.latitude, coords.longitude];
+        if (!isWithinMelbourneCbd(coordinates)) {
+          setCurrentCoordinates(null);
+          setLocationError("Your current location is outside the Melbourne CBD prototype coverage area.");
+          setLocating(false);
+          return;
+        }
+
+        setCurrentCoordinates(coordinates);
+        setStartInput("Current location");
+        setLocating(false);
+        if (routeData) void loadRoutes("Current location", destinationInput, coordinates);
+      },
+      (geolocationError) => {
+        const message = geolocationError.code === geolocationError.PERMISSION_DENIED
+          ? "Location permission was denied. Allow location access in your browser or enter a starting point."
+          : geolocationError.code === geolocationError.TIMEOUT
+            ? "Finding your location timed out. Try again or enter a starting point."
+            : "Your current location could not be determined.";
+        setCurrentCoordinates(null);
+        setLocationError(message);
+        setLocating(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+    );
   }
 
   function chooseDestination(destination: Place) {
@@ -81,8 +121,10 @@ export default function App() {
   }
 
   function chooseStart(start: Place) {
+    setCurrentCoordinates(null);
+    setLocationError("");
     setStartInput(start.name);
-    if (routeData) void loadRoutes(start.name, destinationInput);
+    if (routeData) void loadRoutes(start.name, destinationInput, null);
   }
 
   function resetPlanner() {
@@ -136,17 +178,33 @@ export default function App() {
             <form className="journey-form" onSubmit={submitSearch}>
               <div className="field-group">
                 <label htmlFor="start">Starting point</label>
-                <span className="field-context">Where the walk begins</span>
+                <span className="field-context">{currentCoordinates ? "Using your current position" : "Where the walk begins"}</span>
                 <div className="search-field">
                   <MapPin size={19} aria-hidden="true" />
                   <input
                     id="start"
                     list="start-options"
                     value={startInput}
-                    onChange={(event) => setStartInput(event.target.value)}
+                    onChange={(event) => {
+                      setStartInput(event.target.value);
+                      setCurrentCoordinates(null);
+                      setLocationError("");
+                    }}
                     placeholder="Search starting point"
                   />
+                  <button
+                    type="button"
+                    className="field-location-button"
+                    onClick={useCurrentLocation}
+                    disabled={locating}
+                    aria-label={locating ? "Finding your current location" : "Use your current location"}
+                    title="Use current location"
+                  >
+                    <LocateFixed size={18} aria-hidden="true" />
+                  </button>
                 </div>
+                {currentCoordinates && <span className="field-message success" role="status">Current location ready</span>}
+                {locationError && <span className="field-message error" role="alert">{locationError}</span>}
               </div>
               <datalist id="start-options">
                 {starts.map((start) => <option key={start.id} value={start.name} />)}
@@ -203,11 +261,21 @@ export default function App() {
               <div className="start-control">
                 <label htmlFor="result-start">Starting point</label>
                 <div className="input-action-row">
-                  <input id="result-start" value={startInput} onChange={(event) => setStartInput(event.target.value)} />
-                  <button type="button" className="location-button" onClick={useCurrentLocationDemo} title="Use current location">
-                    <LocateFixed size={16} aria-hidden="true" /><span>Use current</span>
+                  <input
+                    id="result-start"
+                    value={startInput}
+                    onChange={(event) => {
+                      setStartInput(event.target.value);
+                      setCurrentCoordinates(null);
+                      setLocationError("");
+                    }}
+                  />
+                  <button type="button" className="location-button" onClick={useCurrentLocation} disabled={locating} title="Use current location">
+                    <LocateFixed size={16} aria-hidden="true" /><span>{locating ? "Locating..." : "Use current"}</span>
                   </button>
                 </div>
+                {currentCoordinates && <span className="result-location-status">Current location ready</span>}
+                {locationError && <span className="result-location-status error" role="alert">{locationError}</span>}
               </div>
 
               <div className="quick-section">
