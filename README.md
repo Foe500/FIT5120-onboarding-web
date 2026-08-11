@@ -10,6 +10,7 @@ The app helps sensory-sensitive and neurodivergent commuters compare calmer walk
 - Map: Leaflet + React Leaflet + OpenStreetMap tiles
 - Backend: Node.js + Express
 - Routing: public FOSSGIS OSRM foot-routing service, with no API key required
+- Geocoding: public OpenStreetMap Nominatim search, limited to Melbourne CBD
 - Data: City of Melbourne pedestrian-counting open data, with local fallback data for reliable demos
 
 ## Project Structure
@@ -70,6 +71,7 @@ Backend default URL: `http://localhost:4000`
 ```text
 GET /api/health
 GET /api/places
+GET /api/geocode?q=120%20Collins%20Street
 GET /api/sensors/live
 GET /api/routes
 GET /api/routes/sensory-rating
@@ -99,6 +101,12 @@ The backend requests street-following walking geometry from the public [FOSSGIS 
 - The public endpoint is appropriate for a prototype, not heavy production traffic. Its operator also states that route requests are logged.
 
 The frontend displays whether the current geometry is live or fallback and includes routing attribution beside the map.
+
+## Place Search
+
+Destination searches use the public OpenStreetMap Nominatim API. The Express backend limits requests to one at a time with at least 1.1 seconds between calls, caches successful searches for 24 hours, identifies the application with a custom User-Agent, and restricts results to the Melbourne CBD sensory-data coverage area.
+
+Search is triggered only when the user submits the form. It is intentionally not implemented as per-keystroke autocomplete because that usage is prohibited by the public Nominatim policy. The user selects one of up to five address results before its coordinates are sent to the walking-route service.
 
 ## Sensory Rating Rule
 
@@ -133,10 +141,10 @@ The prototype does not require private API keys. City of Melbourne data and the 
 
 ## Prototype Scope
 
-- Real street-following walking routes for recognised Melbourne CBD places and valid current-location coordinates
-- Preset destination recognition instead of full geocoding
+- Search for arbitrary addresses and places within Melbourne CBD
+- Real street-following walking routes for selected CBD places and valid current-location coordinates
 - Browser geolocation for dynamic starting coordinates within Melbourne CBD
 - Approximate sensor-to-route matching
 - Rating based on pedestrian crowd density only
 
-Future iterations can add full geocoding, a production routing provider with an SLA, event data, construction disruptions, noise data, lighting conditions, and personalised sensory thresholds.
+Future iterations can expand search beyond the CBD, add a production geocoding and routing provider with an SLA, event data, construction disruptions, noise data, lighting conditions, and personalised sensory thresholds.
