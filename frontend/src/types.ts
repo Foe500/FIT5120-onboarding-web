@@ -31,9 +31,9 @@ export interface RatedRoute {
   estimated_walking_time: string;
   walking_time_minutes: number;
   distance_meters: number;
-  sensory_level: "Low" | "High";
-  average_pedestrian_count: number;
-  highest_pedestrian_count: number;
+  sensory_level: "Low" | "High" | "Unknown";
+  average_pedestrian_count: number | null;
+  highest_pedestrian_count: number | null;
   nearby_sensor_count: number;
   nearby_sensors: Sensor[];
   explanation: string;
@@ -68,6 +68,7 @@ export interface RatingResponse {
   rating_rule: {
     low: string;
     high: string;
+    unknown: string;
     source_fields: string[];
   };
 }

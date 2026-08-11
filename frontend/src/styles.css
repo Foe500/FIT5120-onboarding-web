@@ -168,6 +168,7 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 3px solid 
 .level-badge { width: fit-content; display: inline-flex; align-items: center; gap: 5px; padding: 6px 7px; border-radius: 5px; font-size: 0.68rem; font-weight: 850; white-space: nowrap; }
 .level-low { color: #11674e; background: #e1f2ea; }
 .level-high { color: #963f24; background: repeating-linear-gradient(135deg, #fbe8df, #fbe8df 5px, #f6d8ca 5px, #f6d8ca 9px); }
+.level-unknown { color: #405a68; border: 1px dashed #aab8be; background: #eef2f3; }
 .route-stats { display: flex; flex-wrap: wrap; gap: 6px; }
 .route-stats span { display: inline-flex; align-items: center; gap: 4px; padding: 5px 6px; border-radius: 5px; color: #435967; background: #f0f4f2; font-size: 0.67rem; font-weight: 750; }
 .explain-toggle { width: 100%; min-height: 34px; display: flex; align-items: center; gap: 7px; padding: 0 13px; border: 0; border-top: 1px solid #edf1ef; color: #315266; background: #fafcfa; font-size: 0.7rem; font-weight: 800; }

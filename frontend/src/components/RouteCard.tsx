@@ -1,4 +1,4 @@
-import { AlertTriangle, CheckCircle2, ChevronDown, ChevronUp, Gauge, Info, MapPin, Timer } from "lucide-react";
+import { AlertTriangle, CheckCircle2, ChevronDown, ChevronUp, CircleHelp, Gauge, Info, MapPin, Timer } from "lucide-react";
 import type { RatedRoute } from "../types";
 
 interface RouteCardProps {
@@ -11,7 +11,9 @@ interface RouteCardProps {
 
 export default function RouteCard({ route, selected, expanded, onSelect, onToggle }: RouteCardProps) {
   const isHigh = route.sensory_level === "High";
-  const StatusIcon = isHigh ? AlertTriangle : CheckCircle2;
+  const isUnknown = route.sensory_level === "Unknown";
+  const StatusIcon = isUnknown ? CircleHelp : isHigh ? AlertTriangle : CheckCircle2;
+  const levelClass = isUnknown ? "level-unknown" : isHigh ? "level-high" : "level-low";
 
   return (
     <article className={`route-card ${selected ? "route-card-selected" : ""}`}>
@@ -27,7 +29,7 @@ export default function RouteCard({ route, selected, expanded, onSelect, onToggl
             <span className="route-mode">{route.route_mode}</span>
             <strong>{route.route_name}</strong>
           </span>
-          <span className={`level-badge ${isHigh ? "level-high" : "level-low"}`}>
+          <span className={`level-badge ${levelClass}`}>
             <StatusIcon size={16} aria-hidden="true" />
             {route.sensory_level} sensory load
           </span>
@@ -46,7 +48,7 @@ export default function RouteCard({ route, selected, expanded, onSelect, onToggl
           </span>
           <span>
             <Gauge size={15} aria-hidden="true" />
-            Avg {route.average_pedestrian_count}/min
+            {route.average_pedestrian_count === null ? "No nearby data" : `Avg ${route.average_pedestrian_count}/min`}
           </span>
         </span>
       </button>
@@ -73,20 +75,22 @@ export default function RouteCard({ route, selected, expanded, onSelect, onToggl
             </div>
             <div>
               <dt>Average count</dt>
-              <dd>{route.average_pedestrian_count}/min</dd>
+              <dd>{route.average_pedestrian_count === null ? "Not available" : `${route.average_pedestrian_count}/min`}</dd>
             </div>
             <div>
               <dt>Highest count</dt>
-              <dd>{route.highest_pedestrian_count}/min</dd>
+              <dd>{route.highest_pedestrian_count === null ? "Not available" : `${route.highest_pedestrian_count}/min`}</dd>
             </div>
           </dl>
-          <div className="sensor-list" aria-label="Top nearby sensors used in route rating">
-            {route.nearby_sensors.slice(0, 3).map((sensor) => (
-              <span key={`${route.id}-${sensor.location_id}`}>
-                {sensor.sensor_description}: {sensor.total_of_directions}/min
-              </span>
-            ))}
-          </div>
+          {route.nearby_sensors.length > 0 && (
+            <div className="sensor-list" aria-label="Top nearby sensors used in route rating">
+              {route.nearby_sensors.slice(0, 3).map((sensor) => (
+                <span key={`${route.id}-${sensor.location_id}`}>
+                  {sensor.sensor_description}: {sensor.total_of_directions}/min
+                </span>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </article>

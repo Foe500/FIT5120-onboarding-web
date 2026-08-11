@@ -1,12 +1,11 @@
 import { CircleMarker, MapContainer, Marker, Polyline, Popup, TileLayer } from "react-leaflet";
 import { labelIcon, sensorIcon } from "../mapIcons";
-import type { Place, RatedRoute, Sensor } from "../types";
+import type { Place, RatedRoute } from "../types";
 
 interface RouteMapProps {
   start?: Place;
   destination?: Place;
   routes: RatedRoute[];
-  sensors: Sensor[];
   selectedRouteId?: string;
   onRouteSelect: (routeId: string) => void;
 }
@@ -17,12 +16,11 @@ export default function RouteMap({
   start,
   destination,
   routes,
-  sensors,
   selectedRouteId,
   onRouteSelect
 }: RouteMapProps) {
   const selectedRoute = routes.find((route) => route.id === selectedRouteId) ?? routes[0];
-  const visibleSensors = selectedRoute?.nearby_sensors?.length ? selectedRoute.nearby_sensors : sensors.slice(0, 12);
+  const visibleSensors = selectedRoute?.nearby_sensors ?? [];
 
   return (
     <MapContainer

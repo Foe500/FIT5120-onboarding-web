@@ -3,6 +3,7 @@ import {
   Activity,
   AlertCircle,
   ArrowLeft,
+  CircleHelp,
   Database,
   Footprints,
   LocateFixed,
@@ -279,7 +280,7 @@ export default function App() {
             <dl className="city-signal" aria-label="Route planner coverage">
               <div><dt>City coverage</dt><dd>Melbourne CBD</dd></div>
               <div><dt>Data signal</dt><dd><span className="live-dot" /> Live open data</dd></div>
-              <div><dt>Route language</dt><dd>Low / High load</dd></div>
+              <div><dt>Route language</dt><dd>Low / High / Unknown</dd></div>
             </dl>
           </section>
 
@@ -479,8 +480,14 @@ export default function App() {
                 <div><p className="eyebrow">Selected route</p><h2>{selectedRoute?.route_name ?? "Loading route"}</h2></div>
                 <div className="map-legend" aria-label="Map sensor legend">
                   <strong>Pedestrian sensors</strong>
-                  <span><i className="legend-symbol low-symbol" /> Low activity</span>
-                  <span><i className="legend-symbol high-symbol" /> High activity</span>
+                  {selectedRoute?.sensory_level === "Unknown" ? (
+                    <span><CircleHelp size={14} aria-hidden="true" /> No nearby sensor data</span>
+                  ) : (
+                    <>
+                      <span><i className="legend-symbol low-symbol" /> Low activity</span>
+                      <span><i className="legend-symbol high-symbol" /> High activity</span>
+                    </>
+                  )}
                 </div>
               </div>
               <div className="map-frame">
@@ -488,7 +495,6 @@ export default function App() {
                   start={routeData.start}
                   destination={routeData.destination}
                   routes={routeData.routes}
-                  sensors={routeData.sensors}
                   selectedRouteId={selectedRoute?.id}
                   onRouteSelect={(routeId) => { setSelectedRouteId(routeId); setExpandedRouteId(routeId); }}
                 />
@@ -509,7 +515,7 @@ export default function App() {
             <div className="steps">
               <article><span>01</span><Route size={22} aria-hidden="true" /><h3>Map route segments</h3><p>We trace each walking option through Melbourne CBD street blocks.</p></article>
               <article><span>02</span><Activity size={22} aria-hidden="true" /><h3>Read pedestrian data</h3><p>Nearby City of Melbourne sensors reveal activity along the journey.</p></article>
-              <article><span>03</span><Footprints size={22} aria-hidden="true" /><h3>Make it understandable</h3><p>Routes become clear Low or High sensory-load choices with supporting evidence.</p></article>
+              <article><span>03</span><Footprints size={22} aria-hidden="true" /><h3>Make it understandable</h3><p>Routes show Low or High sensory load when evidence exists, and Unknown when nearby data is insufficient.</p></article>
             </div>
           </section>
         </main>
