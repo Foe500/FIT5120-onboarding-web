@@ -11,6 +11,28 @@ const port = process.env.PORT || 4000;
 app.use(cors());
 app.use(express.json());
 
+function readStartCoordinates(query) {
+  const hasLatitude = query.startLat !== undefined;
+  const hasLongitude = query.startLng !== undefined;
+
+  if (!hasLatitude && !hasLongitude) return null;
+  if (!hasLatitude || !hasLongitude) {
+    throw new TypeError("Both startLat and startLng are required.");
+  }
+
+  const latitude = Number(query.startLat);
+  const longitude = Number(query.startLng);
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+    throw new TypeError("Start coordinates must be valid numbers.");
+  }
+
+  return [latitude, longitude];
+}
+
+function resolveRequestFromQuery(query) {
+  return resolveRouteRequest(query.start, query.destination, readStartCoordinates(query));
+}
+
 app.get("/api/health", (_request, response) => {
   response.json({
     status: "ok",
@@ -33,12 +55,22 @@ app.get("/api/sensors/live", async (request, response) => {
 });
 
 app.get("/api/routes", (request, response) => {
-  const result = resolveRouteRequest(request.query.start, request.query.destination);
-  response.json(result);
+  try {
+    response.json(resolveRequestFromQuery(request.query));
+  } catch (error) {
+    response.status(400).json({ error: error instanceof Error ? error.message : "Invalid route request." });
+  }
 });
 
 app.get("/api/routes/sensory-rating", async (request, response) => {
-  const routeResult = resolveRouteRequest(request.query.start, request.query.destination);
+  let routeResult;
+  try {
+    routeResult = resolveRequestFromQuery(request.query);
+  } catch (error) {
+    response.status(400).json({ error: error instanceof Error ? error.message : "Invalid route request." });
+    return;
+  }
+
   const sensorResult = await fetchLiveSensors(request.query.limit ?? 100);
   const ratedRoutes = routeResult.routes.map((route) => rateRoute(route, sensorResult.sensors));
 
