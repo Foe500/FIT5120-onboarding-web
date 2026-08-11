@@ -29,7 +29,7 @@ function readStartCoordinates(query) {
   return [latitude, longitude];
 }
 
-function resolveRequestFromQuery(query) {
+async function resolveRequestFromQuery(query) {
   return resolveRouteRequest(query.start, query.destination, readStartCoordinates(query));
 }
 
@@ -54,9 +54,9 @@ app.get("/api/sensors/live", async (request, response) => {
   response.json(data);
 });
 
-app.get("/api/routes", (request, response) => {
+app.get("/api/routes", async (request, response) => {
   try {
-    response.json(resolveRequestFromQuery(request.query));
+    response.json(await resolveRequestFromQuery(request.query));
   } catch (error) {
     response.status(400).json({ error: error instanceof Error ? error.message : "Invalid route request." });
   }
@@ -65,7 +65,7 @@ app.get("/api/routes", (request, response) => {
 app.get("/api/routes/sensory-rating", async (request, response) => {
   let routeResult;
   try {
-    routeResult = resolveRequestFromQuery(request.query);
+    routeResult = await resolveRequestFromQuery(request.query);
   } catch (error) {
     response.status(400).json({ error: error instanceof Error ? error.message : "Invalid route request." });
     return;
