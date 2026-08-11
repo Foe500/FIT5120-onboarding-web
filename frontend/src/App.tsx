@@ -294,6 +294,14 @@ export default function App() {
                 <div><strong>{routeData.data_status.source}</strong><span>{routeData.data_status.message}</span></div>
               </div>
 
+              <div className={routeData.routing_status.is_live_routing ? "routing-status live" : "routing-status fallback"} aria-label="Walking route source">
+                <Route size={18} aria-hidden="true" />
+                <div>
+                  <strong>{routeData.routing_status.is_live_routing ? "Live walking geometry" : "Fallback route geometry"}</strong>
+                  <span>{routeData.routing_status.message}</span>
+                </div>
+              </div>
+
               {loading && <div className="loading-card">Calculating sensory load from pedestrian count data...</div>}
               {error && <div className="error-card">{error}</div>}
 
@@ -334,7 +342,14 @@ export default function App() {
                   onRouteSelect={(routeId) => { setSelectedRouteId(routeId); setExpandedRouteId(routeId); }}
                 />
               </div>
-              <div className="map-footer"><span>Powered by City of Melbourne Open Data</span><span>{routeData.routing_status.provider}</span></div>
+              <div className="map-footer">
+                <span>Pedestrian activity: City of Melbourne Open Data</span>
+                {routeData.routing_status.is_live_routing ? (
+                  <a href="https://routing.openstreetmap.de/about.html" target="_blank" rel="noreferrer">Routing: FOSSGIS OSRM + OpenStreetMap</a>
+                ) : (
+                  <span>{routeData.routing_status.provider}</span>
+                )}
+              </div>
             </section>
           </section>
 
