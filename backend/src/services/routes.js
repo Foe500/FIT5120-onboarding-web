@@ -2,9 +2,9 @@ import { destinationPresets, findPlace, isWithinCbd, startPresets } from "../dat
 import { getPresetRoutes } from "../data/routes.js";
 import { fetchWalkingRoutes } from "./walkingRoutes.js";
 
-export async function resolveRouteRequest(startQuery, destinationQuery, startCoordinates = null) {
+export async function resolveRouteRequest(startQuery, destinationQuery, startCoordinates = null, destinationCoordinates = null) {
   let start = findPlace(startQuery, startPresets, startPresets[0]);
-  const destination = findPlace(destinationQuery, destinationPresets, destinationPresets[0]);
+  let destination = findPlace(destinationQuery, destinationPresets, destinationPresets[0]);
 
   if (startCoordinates) {
     if (!isWithinCbd(startCoordinates)) {
@@ -16,6 +16,19 @@ export async function resolveRouteRequest(startQuery, destinationQuery, startCoo
       name: "Current location",
       address: "Browser-provided location within Melbourne CBD",
       coordinates: startCoordinates
+    };
+  }
+
+  if (destinationCoordinates) {
+    if (!isWithinCbd(destinationCoordinates)) {
+      throw new RangeError("The selected destination must be within Melbourne CBD.");
+    }
+
+    destination = {
+      id: `searched-destination-${destinationCoordinates.join("-")}`,
+      name: String(destinationQuery || "Selected destination").trim(),
+      address: "Place selected from OpenStreetMap search",
+      coordinates: destinationCoordinates
     };
   }
 

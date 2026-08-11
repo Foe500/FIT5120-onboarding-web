@@ -1,6 +1,7 @@
 import cors from "cors";
 import express from "express";
 import { destinationPresets, startPresets } from "./data/places.js";
+import { searchPlaces } from "./services/geocoding.js";
 import { fetchLiveSensors } from "./services/openData.js";
 import { rateRoute } from "./services/rating.js";
 import { resolveRouteRequest } from "./services/routes.js";
@@ -11,26 +12,31 @@ const port = process.env.PORT || 4000;
 app.use(cors());
 app.use(express.json());
 
-function readStartCoordinates(query) {
-  const hasLatitude = query.startLat !== undefined;
-  const hasLongitude = query.startLng !== undefined;
+function readCoordinates(query, latitudeKey, longitudeKey, label) {
+  const hasLatitude = query[latitudeKey] !== undefined;
+  const hasLongitude = query[longitudeKey] !== undefined;
 
   if (!hasLatitude && !hasLongitude) return null;
   if (!hasLatitude || !hasLongitude) {
-    throw new TypeError("Both startLat and startLng are required.");
+    throw new TypeError(`Both ${latitudeKey} and ${longitudeKey} are required.`);
   }
 
-  const latitude = Number(query.startLat);
-  const longitude = Number(query.startLng);
+  const latitude = Number(query[latitudeKey]);
+  const longitude = Number(query[longitudeKey]);
   if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
-    throw new TypeError("Start coordinates must be valid numbers.");
+    throw new TypeError(`${label} coordinates must be valid numbers.`);
   }
 
   return [latitude, longitude];
 }
 
 async function resolveRequestFromQuery(query) {
-  return resolveRouteRequest(query.start, query.destination, readStartCoordinates(query));
+  return resolveRouteRequest(
+    query.start,
+    query.destination,
+    readCoordinates(query, "startLat", "startLng", "Start"),
+    readCoordinates(query, "destinationLat", "destinationLng", "Destination")
+  );
 }
 
 app.get("/api/health", (_request, response) => {
@@ -46,6 +52,18 @@ app.get("/api/places", (_request, response) => {
     starts: startPresets,
     destinations: destinationPresets
   });
+});
+
+app.get("/api/geocode", async (request, response) => {
+  try {
+    const results = await searchPlaces(request.query.q);
+    response.json({ results });
+  } catch (error) {
+    const isInputError = error instanceof TypeError;
+    response.status(isInputError ? 400 : 502).json({
+      error: error instanceof Error ? error.message : "Places could not be searched."
+    });
+  }
 });
 
 app.get("/api/sensors/live", async (request, response) => {
