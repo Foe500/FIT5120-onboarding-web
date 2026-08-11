@@ -1,2 +1,122 @@
-# FIT5120-onboarding-web
-assignment for FIT5120 web ver.
+# Building Sensory-Friendly Urban Futures
+
+FIT5120 onboarding prototype web app: **Hush**, a sensory-aware route planner for Melbourne CBD.
+
+The app helps sensory-sensitive and neurodivergent commuters compare calmer walking routes. Users can choose a starting point and destination, view route options on a Leaflet/OpenStreetMap interface, and inspect why each route receives a Low or High sensory-load rating.
+
+## Tech Stack
+
+- Frontend: React + Vite + TypeScript
+- Map: Leaflet + React Leaflet + OpenStreetMap tiles
+- Backend: Node.js + Express
+- Data: City of Melbourne pedestrian-counting open data, with local fallback data for reliable demos
+
+## Project Structure
+
+```text
+hush-sensory-navigation/
+|-- backend/
+|   |-- src/
+|   |   |-- data/          CBD places, preset routes, fallback sensors
+|   |   |-- services/      Open data, routing, geo, sensory-rating logic
+|   |   `-- index.js       Express API entry
+|   |-- .env.example
+|   `-- package.json
+|-- frontend/
+|   |-- src/
+|   |   |-- components/    Route cards and Leaflet map
+|   |   |-- App.tsx        Main product screen
+|   |   |-- api.ts         Frontend API client
+|   |   `-- styles.css     Responsive app styling
+|   |-- .env.example
+|   |-- index.html
+|   `-- package.json
+|-- package.json           Root scripts
+`-- README.md
+```
+
+## Run Locally
+
+Install dependencies:
+
+```bash
+npm run install:all
+```
+
+Start frontend and backend together:
+
+```bash
+npm run dev
+```
+
+Local URLs:
+
+```text
+Frontend: http://localhost:5173
+Backend:  http://localhost:4000
+```
+
+Build check:
+
+```bash
+npm run check
+```
+
+## API Endpoints
+
+Backend default URL: `http://localhost:4000`
+
+```text
+GET /api/health
+GET /api/places
+GET /api/sensors/live
+GET /api/routes
+GET /api/routes/sensory-rating
+```
+
+Example:
+
+```text
+/api/routes/sensory-rating?start=Melbourne%20Town%20Hall&destination=State%20Library%20Victoria
+```
+
+## Sensory Rating Rule
+
+Initial onboarding rule:
+
+- Low sensory load: average nearby pedestrian count `< 50`
+- High sensory load: average nearby pedestrian count `>= 50`
+
+The explanation panel also shows nearby sensor count, average pedestrian count, highest pedestrian count, top contributing sensors, and data-source status.
+
+## Deployment
+
+Split deployment is recommended:
+
+- Deploy `backend/` to a Node host such as Render, Railway, Fly.io, or an Express-compatible server.
+- Deploy `frontend/` to Vercel, Netlify, or any static hosting service.
+- Set frontend environment variable `VITE_API_BASE_URL` to the deployed backend URL.
+
+Example:
+
+```text
+VITE_API_BASE_URL=https://your-backend.example.com
+```
+
+Backend environment:
+
+```text
+PORT=4000
+```
+
+The prototype does not require private API keys. City of Melbourne data is public, and fallback data keeps the demo usable if the live data service is unavailable.
+
+## Prototype Scope
+
+- Preset Melbourne CBD routes for onboarding demonstration
+- Preset destination recognition instead of full geocoding
+- Demo current-location button using Melbourne Town Hall
+- Approximate sensor-to-route matching
+- Rating based on pedestrian crowd density only
+
+Future iterations can add real browser geolocation, a routing provider, event data, construction disruptions, noise data, lighting conditions, and personalised sensory thresholds.
