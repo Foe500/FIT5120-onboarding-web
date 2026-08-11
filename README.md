@@ -120,8 +120,9 @@ Initial onboarding rule:
 
 - Low sensory load: average nearby pedestrian count `< 50`
 - High sensory load: average nearby pedestrian count `>= 50`
+- Unknown sensory load: no pedestrian sensors within 180 metres of the route
 
-The explanation panel also shows nearby sensor count, average pedestrian count, highest pedestrian count, top contributing sensors, and data-source status.
+Only sensors within 180 metres of the route geometry contribute to its rating. The system does not substitute unrelated sensors when no nearby evidence exists. The explanation panel shows nearby sensor count, average pedestrian count, highest pedestrian count, top contributing sensors, and data-source status; unavailable metrics are explicitly labelled when the level is Unknown.
 
 ## Deployment
 
