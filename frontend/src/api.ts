@@ -1,4 +1,4 @@
-import type { Coordinates, GeocodeResponse, PlacesResponse, RatingResponse } from "./types";
+import type { Coordinates, GeocodeResponse, PlacesResponse, RatingResponse, RefugesResponse } from "./types";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "";
 
@@ -13,6 +13,10 @@ async function request<T>(path: string): Promise<T> {
 
 export function getPlaces() {
   return request<PlacesResponse>("/api/places");
+}
+
+export function getRefuges() {
+  return request<RefugesResponse>("/api/refuges");
 }
 
 export function searchPlaces(query: string) {

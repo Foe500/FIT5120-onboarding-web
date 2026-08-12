@@ -148,6 +148,12 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 3px solid 
 .data-status strong { font-size: 0.75rem; }
 .data-status span { margin-top: 2px; color: #62766e; font-size: 0.67rem; line-height: 1.4; }
 .data-status.fallback { border-color: #e7c7b6; color: #8e4026; background: #fcf3ee; }
+.congestion-guidance { display: flex; align-items: flex-start; gap: 9px; margin: 0 0 16px; padding: 10px 11px; border: 1px solid #b8d9cf; border-radius: 6px; color: var(--teal-dark); background: #edf8f4; }
+.congestion-guidance svg { flex: 0 0 auto; margin-top: 1px; }
+.congestion-guidance strong, .congestion-guidance span { display: block; }
+.congestion-guidance strong { font-size: 0.75rem; }
+.congestion-guidance span { margin-top: 2px; color: #62766e; font-size: 0.67rem; line-height: 1.4; }
+.congestion-guidance.no_lower_congestion_route_available { border-color: #e7c7b6; color: #8e4026; background: #fcf3ee; }
 .routing-status { display: flex; align-items: flex-start; gap: 9px; margin: -8px 0 16px; padding: 10px 11px; border: 1px solid #d8e1dd; border-radius: 6px; color: #315266; background: #f7faf9; }
 .routing-status svg { flex: 0 0 auto; margin-top: 1px; }
 .routing-status strong, .routing-status span { display: block; }
@@ -155,6 +161,11 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 3px solid 
 .routing-status span { margin-top: 2px; color: #65766e; font-size: 0.67rem; line-height: 1.4; }
 .routing-status.live { border-color: #b8d9cf; color: var(--teal-dark); background: #edf8f4; }
 .routing-status.fallback { border-color: #e7c7b6; color: #8e4026; background: #fcf3ee; }
+.refuge-controls { margin: -8px 0 16px; }
+.refuge-toggle, .refuge-filters button { min-height: 31px; padding: 6px 9px; border: 1px solid #bfd0d6; border-radius: 5px; color: #315266; background: #f7fafb; font-size: 0.68rem; font-weight: 800; }
+.refuge-toggle.active, .refuge-filters button.active { border-color: #193d5a; color: #fff; background: #193d5a; }
+.refuge-filters { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 7px; }
+.refuge-navigate-button { margin-top: 8px; padding: 6px 9px; border: 0; border-radius: 4px; color: #fff; background: #147a62; font-size: 0.72rem; font-weight: 800; }
 .loading-card, .error-card { margin: 10px 0; padding: 11px; border-radius: 6px; color: #405a68; background: #eef4f6; font-size: 0.78rem; line-height: 1.45; }
 .error-card { color: #842e2e; background: #fff0f0; }
 .route-list { display: grid; gap: 9px; }
@@ -165,6 +176,7 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 3px solid 
 .route-heading strong { display: block; margin-top: 3px; font-size: 0.88rem; overflow-wrap: anywhere; }
 .route-mode { color: var(--muted); font-size: 0.6rem; font-weight: 850; text-transform: uppercase; }
 .route-summary { color: var(--muted); font-size: 0.72rem; line-height: 1.4; }
+.recommendation-badge { width: fit-content; display: inline-flex; align-items: center; gap: 5px; padding: 5px 7px; border-radius: 5px; color: #0f604d; background: #e1f2ea; font-size: 0.66rem; font-weight: 850; }
 .level-badge { width: fit-content; display: inline-flex; align-items: center; gap: 5px; padding: 6px 7px; border-radius: 5px; font-size: 0.68rem; font-weight: 850; white-space: nowrap; }
 .level-low { color: #11674e; background: #e1f2ea; }
 .level-high { color: #963f24; background: repeating-linear-gradient(135deg, #fbe8df, #fbe8df 5px, #f6d8ca 5px, #f6d8ca 9px); }
@@ -212,6 +224,9 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 3px solid 
 .sensor-marker-low span { background: var(--teal); }
 .sensor-marker-high span { background: var(--rust); }
 .sensor-marker strong { line-height: 1; }
+.congestion-marker { display: grid; grid-template-columns: 22px auto; gap: 5px; align-items: center; padding: 4px 8px 4px 4px; border: 2px solid #fff; border-radius: 999px; color: #742d1c; background: #fff5f0; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.24); font-size: 0.67rem; font-weight: 850; }
+.congestion-marker span { width: 22px; height: 22px; display: grid; place-items: center; border-radius: 50%; color: #fff; background: var(--rust); }
+.congestion-marker strong { line-height: 1; }
 
 .how-section { display: grid; grid-template-columns: minmax(230px, 0.75fr) 2fr; gap: 48px; padding: 18px max(8vw, 34px) 78px; }
 .how-heading h2 { max-width: 280px; font-family: Georgia, serif; font-size: 2rem; font-weight: 600; line-height: 1.1; }

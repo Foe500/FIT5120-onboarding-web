@@ -3,8 +3,9 @@ import express from "express";
 import { destinationPresets, startPresets } from "./data/places.js";
 import { searchPlaces } from "./services/geocoding.js";
 import { fetchLiveSensors } from "./services/openData.js";
-import { rateRoute } from "./services/rating.js";
+import { CONGESTION_THRESHOLD, rateRoute } from "./services/rating.js";
 import { resolveRouteRequest } from "./services/routes.js";
+import { getValidatedRefuges } from "./services/refuges.js";
 
 const app = express();
 const port = process.env.PORT || 4000;
@@ -66,6 +67,13 @@ app.get("/api/places", (_request, response) => {
   });
 });
 
+app.get("/api/refuges", (_request, response) => {
+  response.json({
+    refuges: getValidatedRefuges(),
+    categories: ["Park", "Library", "Quiet public space"]
+  });
+});
+
 app.get("/api/geocode", async (request, response) => {
   try {
     const results = await searchPlaces(request.query.q);
@@ -103,15 +111,42 @@ app.get("/api/routes/sensory-rating", async (request, response) => {
 
   const sensorResult = await fetchLiveSensors(request.query.limit ?? 100);
   const ratedRoutes = routeResult.routes.map((route) => rateRoute(route, sensorResult.sensors));
+  const proposedRoute = ratedRoutes[0];
+  const proposedExposure = proposedRoute?.congestion.exposure_score ?? 0;
+  const lowerCongestionAlternatives = proposedRoute && proposedRoute.congestion.congested_segment_count > 0
+    ? ratedRoutes.slice(1).filter((route) =>
+      route.sensory_level !== "Unknown" && route.congestion.exposure_score < proposedExposure
+    )
+    : [];
+  const recommendedRoute = lowerCongestionAlternatives
+    .sort((a, b) => a.congestion.exposure_score - b.congestion.exposure_score || a.walking_time_minutes - b.walking_time_minutes)[0];
+  const congestionGuidance = !proposedRoute || proposedRoute.congestion.congested_segment_count === 0
+    ? {
+        status: "no_congestion_on_proposed_route",
+        recommended_route_id: null,
+        message: "The proposed route has no identified highly congested pedestrian corridors in the available data."
+      }
+    : recommendedRoute
+      ? {
+          status: "lower_congestion_route_available",
+          recommended_route_id: recommendedRoute.id,
+          message: `${recommendedRoute.route_name} avoids more of the identified congested corridors than the proposed route and remains connected to your destination.`
+        }
+      : {
+          status: "no_lower_congestion_route_available",
+          recommended_route_id: null,
+          message: "Highly congested corridors were identified on the proposed route, but no suitable connected lower-congestion alternative is available from the current route options."
+        };
 
   response.json({
     ...routeResult,
-    routes: ratedRoutes,
+    routes: ratedRoutes.map((route) => ({ ...route, is_low_congestion_recommendation: route.id === congestionGuidance.recommended_route_id })),
     sensors: sensorResult.sensors,
     data_status: sensorResult.data_status,
+    congestion_guidance: congestionGuidance,
     rating_rule: {
-      low: "average pedestrian count < 50",
-      high: "average pedestrian count >= 50",
+      low: `average pedestrian count < ${CONGESTION_THRESHOLD}`,
+      high: `average pedestrian count >= ${CONGESTION_THRESHOLD}`,
       unknown: "no pedestrian sensors within 180 metres of the route",
       source_fields: ["location_id", "sensor_id", "total_of_directions", "latitude", "longitude"]
     }

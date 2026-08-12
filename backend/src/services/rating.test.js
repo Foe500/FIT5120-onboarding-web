@@ -51,4 +51,15 @@ test("rates a route from sensors within 180 metres", () => {
   assert.equal(result.nearby_sensor_count, 1);
   assert.equal(result.average_pedestrian_count, 60);
   assert.equal(result.highest_pedestrian_count, 60);
+  assert.equal(result.congestion.threshold_people_per_minute, 50);
+  assert.equal(result.congestion.congested_segment_count, 1);
+  assert.equal(result.congestion.exposure_score, 60);
+  assert.equal(result.congestion.congested_areas[0].sensor_description, "Test sensor");
+});
+
+test("does not mark low-activity route sensors as congested", () => {
+  const result = rateRoute(route, [sensor({ total_of_directions: 49 })]);
+
+  assert.equal(result.congestion.congested_segment_count, 0);
+  assert.equal(result.congestion.exposure_score, 0);
 });

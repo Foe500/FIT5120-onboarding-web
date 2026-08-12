@@ -4,6 +4,7 @@ const API_BASE = "https://data.melbourne.vic.gov.au/api/explore/v2.1/catalog/dat
 const COUNTS_DATASET = "pedestrian-counting-system-past-hour-counts-per-minute";
 const LOCATIONS_DATASET = "pedestrian-counting-system-sensor-locations";
 const REQUEST_TIMEOUT_MS = 9000;
+const LIVE_DATA_MAX_AGE_MS = 15 * 60 * 1000;
 
 function densityLevel(total) {
   return Number(total) >= 50 ? "High" : "Low";
@@ -53,12 +54,36 @@ function normaliseSensor(sensor) {
   };
 }
 
+function timestampFrom(value) {
+  const timestamp = Date.parse(value);
+  return Number.isFinite(timestamp) ? timestamp : null;
+}
+
+function buildDataStatus(sensors) {
+  const observedTimestamps = sensors
+    .map((sensor) => timestampFrom(sensor.sensing_datetime))
+    .filter((timestamp) => timestamp !== null);
+  const latestTimestamp = observedTimestamps.length ? Math.max(...observedTimestamps) : null;
+  const isLive = latestTimestamp !== null && Date.now() - latestTimestamp <= LIVE_DATA_MAX_AGE_MS;
+  const observedAt = latestTimestamp === null ? null : new Date(latestTimestamp).toISOString();
+
+  return {
+    source: "City of Melbourne Open Data",
+    is_fallback: false,
+    is_live: isLive,
+    observed_at: observedAt,
+    message: isLive
+      ? "Live pedestrian count and sensor location data loaded from City of Melbourne Open Data."
+      : "The latest available City of Melbourne pedestrian counts are not live. Historical/recent data is being used for this route."
+  };
+}
+
 export async function fetchLiveSensors(limit = 100) {
   const safeLimit = Math.max(1, Math.min(Number(limit) || 100, 100));
 
   try {
     const [counts, locations] = await Promise.all([
-      fetchDataset(COUNTS_DATASET, { limit: String(safeLimit) }),
+      fetchDataset(COUNTS_DATASET, { limit: String(safeLimit), order_by: "sensing_datetime desc" }),
       fetchDataset(LOCATIONS_DATASET, { limit: String(safeLimit) })
     ]);
 
@@ -101,19 +126,17 @@ export async function fetchLiveSensors(limit = 100) {
     if (sensors.length === 0) throw new Error("No matching sensor records returned by live datasets.");
     return {
       sensors,
-      data_status: {
-        source: "City of Melbourne Open Data",
-        is_fallback: false,
-        message: "Live pedestrian count and sensor location data loaded from City of Melbourne Open Data."
-      }
+      data_status: buildDataStatus(sensors)
     };
   } catch (error) {
     return {
       sensors: fallbackSensors.map(normaliseSensor),
       data_status: {
-        source: "Fallback demo data",
+        source: "Historical fallback data",
         is_fallback: true,
-        message: `Live Open Data request failed, so the prototype switched to demo data. ${error.message}`
+        is_live: false,
+        observed_at: null,
+        message: `Live pedestrian data are unavailable, so historical fallback estimates are being used. This information is not live. ${error.message}`
       }
     };
   }

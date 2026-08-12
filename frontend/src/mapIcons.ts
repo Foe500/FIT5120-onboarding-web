@@ -10,6 +10,15 @@ export function sensorIcon(level: "Low" | "High") {
   });
 }
 
+export function congestionIcon() {
+  return L.divIcon({
+    className: "congestion-marker",
+    html: '<span aria-hidden="true">!</span><strong>Congested</strong>',
+    iconSize: [98, 36],
+    iconAnchor: [49, 18]
+  });
+}
+
 export function labelIcon(label: string, className: string) {
   return L.divIcon({
     className,

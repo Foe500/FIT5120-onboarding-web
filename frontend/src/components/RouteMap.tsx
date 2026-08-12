@@ -1,13 +1,25 @@
-import { CircleMarker, MapContainer, Marker, Polyline, Popup, TileLayer } from "react-leaflet";
-import { labelIcon, sensorIcon } from "../mapIcons";
-import type { Place, RatedRoute } from "../types";
+import { Fragment } from "react";
+import { Circle, CircleMarker, MapContainer, Marker, Polyline, Popup, TileLayer } from "react-leaflet";
+import { congestionIcon, labelIcon, sensorIcon } from "../mapIcons";
+import type { Place, RatedRoute, RefugeLocation } from "../types";
 
 interface RouteMapProps {
   start?: Place;
   destination?: Place;
   routes: RatedRoute[];
   selectedRouteId?: string;
+  refuges: RefugeLocation[];
+  showRefuges: boolean;
+  onNavigateRefuge: (refuge: RefugeLocation) => void;
   onRouteSelect: (routeId: string) => void;
+}
+
+function approximateDistanceMetres([lat1, lng1]: [number, number], [lat2, lng2]: [number, number]) {
+  const radians = (value: number) => value * Math.PI / 180;
+  const dLat = radians(lat2 - lat1);
+  const dLng = radians(lng2 - lng1);
+  const value = Math.sin(dLat / 2) ** 2 + Math.cos(radians(lat1)) * Math.cos(radians(lat2)) * Math.sin(dLng / 2) ** 2;
+  return Math.round(6371000 * 2 * Math.asin(Math.sqrt(value)) / 10) * 10;
 }
 
 const routePalette = ["#147a62", "#193d5a", "#b55431"];
@@ -17,10 +29,14 @@ export default function RouteMap({
   destination,
   routes,
   selectedRouteId,
+  refuges,
+  showRefuges,
+  onNavigateRefuge,
   onRouteSelect
 }: RouteMapProps) {
   const selectedRoute = routes.find((route) => route.id === selectedRouteId) ?? routes[0];
-  const visibleSensors = selectedRoute?.nearby_sensors ?? [];
+  const visibleSensors = (selectedRoute?.nearby_sensors ?? []).filter((sensor) => sensor.density_level === "Low");
+  const congestedAreas = selectedRoute?.congestion.congested_areas ?? [];
 
   return (
     <MapContainer
@@ -103,6 +119,58 @@ export default function RouteMap({
           </Popup>
         </Marker>
       ))}
+
+      {congestedAreas.map((area) => (
+        <Fragment key={`congestion-${area.location_id}`}>
+          <Circle
+            center={[area.latitude, area.longitude]}
+            radius={70}
+            pathOptions={{ color: "#b55431", fillColor: "#d96b43", fillOpacity: 0.22, weight: 2, dashArray: "5 7" }}
+          />
+          <Marker
+            position={[area.latitude, area.longitude]}
+            icon={congestionIcon()}
+          >
+            <Popup>
+              <strong>Highly congested pedestrian corridor</strong>
+              <br />
+              {area.sensor_description}
+              <br />
+              {area.pedestrian_count} people/min (threshold: {selectedRoute?.congestion.threshold_people_per_minute})
+              <br />
+              Estimated congestion area: 70 m radius
+              <br />
+              {area.distance_to_route_meters} m from selected route
+            </Popup>
+          </Marker>
+        </Fragment>
+      ))}
+
+      {showRefuges && refuges.map((refuge) => {
+        const distance = start ? approximateDistanceMetres(start.coordinates, refuge.coordinates) : null;
+        return (
+          <CircleMarker
+            key={refuge.id}
+            center={refuge.coordinates}
+            radius={10}
+            pathOptions={{ color: "#ffffff", fillColor: "#315266", fillOpacity: 1, weight: 3 }}
+          >
+            <Popup>
+              <strong>{refuge.name}</strong>
+              <br />
+              {refuge.category}
+              <br />
+              {distance === null ? "Distance unavailable" : `Approx. ${distance} m from your start`}
+              <br />
+              {refuge.opening_information}
+              <br />
+              <a href={refuge.source} target="_blank" rel="noreferrer">Location source</a>
+              <br />
+              <button type="button" className="refuge-navigate-button" onClick={() => onNavigateRefuge(refuge)}>Walk here</button>
+            </Popup>
+          </CircleMarker>
+        );
+      })}
     </MapContainer>
   );
 }

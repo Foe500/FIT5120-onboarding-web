@@ -13,10 +13,10 @@ import {
   Search,
   Waves
 } from "lucide-react";
-import { getPlaces, getRatedRoutes, searchPlaces } from "./api";
+import { getPlaces, getRatedRoutes, getRefuges, searchPlaces } from "./api";
 import RouteCard from "./components/RouteCard";
 import RouteMap from "./components/RouteMap";
-import type { Coordinates, Place, RatingResponse } from "./types";
+import type { Coordinates, Place, RatingResponse, RefugeCategory, RefugeLocation } from "./types";
 
 const defaultStart = "Melbourne Town Hall";
 const cbdBounds = { north: -37.8005, south: -37.8248, west: 144.946, east: 144.9735 };
@@ -45,6 +45,10 @@ export default function App() {
   const [currentCoordinates, setCurrentCoordinates] = useState<Coordinates | null>(null);
   const [locating, setLocating] = useState(false);
   const [locationError, setLocationError] = useState("");
+  const [refuges, setRefuges] = useState<RefugeLocation[]>([]);
+  const [refugeCategories, setRefugeCategories] = useState<RefugeCategory[]>([]);
+  const [showRefuges, setShowRefuges] = useState(false);
+  const [refugeCategory, setRefugeCategory] = useState<RefugeCategory | "All">("All");
 
   useEffect(() => {
     getPlaces()
@@ -53,6 +57,13 @@ export default function App() {
         setDestinations(payload.destinations);
       })
       .catch(() => setError("Preset CBD locations could not be loaded. You can still type a known destination."));
+  }, []);
+
+  useEffect(() => {
+    getRefuges().then((payload) => {
+      setRefuges(payload.refuges);
+      setRefugeCategories(payload.categories);
+    }).catch(() => setError("Sensory refuge locations could not be loaded."));
   }, []);
 
   const selectedRoute = useMemo(() => {
@@ -69,6 +80,7 @@ export default function App() {
     (selectedDestination && selectedDestination.name === destinationInput)
     || destinations.some((destination) => destination.name.toLowerCase() === destinationInput.trim().toLowerCase())
   );
+  const visibleRefuges = refugeCategory === "All" ? refuges : refuges.filter((refuge) => refuge.category === refugeCategory);
 
   async function loadRoutes(
     start: string,
@@ -91,7 +103,7 @@ export default function App() {
       const payload = await getRatedRoutes(start, destination, searchedStartCoordinates, searchedCoordinates);
       setRouteData(payload);
       setSelectedRouteId(payload.routes[0]?.id ?? "");
-      setExpandedRouteId(payload.routes[0]?.id ?? "");
+      setExpandedRouteId("");
       requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "smooth" }));
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : "Routes could not be loaded. Please check that the backend is running.");
@@ -235,6 +247,13 @@ export default function App() {
     setLocationError("");
     setStartInput(start.name);
     if (routeData) void loadRoutes(start.name, destinationInput, null, selectedDestination, start);
+  }
+
+  function navigateToRefuge(refuge: RefugeLocation) {
+    const destination: Place = { id: refuge.id, name: refuge.name, address: refuge.address, coordinates: refuge.coordinates };
+    setSelectedDestination(destination);
+    setDestinationInput(refuge.name);
+    void loadRoutes(startInput, refuge.name, currentCoordinates, destination, selectedStart);
   }
 
   function resetPlanner() {
@@ -442,8 +461,8 @@ export default function App() {
               </div>
 
               <div className={routeData.data_status.is_fallback ? "data-status fallback" : "data-status live"} aria-label="Open data status">
-                {routeData.data_status.is_fallback ? <AlertCircle size={18} aria-hidden="true" /> : <Database size={18} aria-hidden="true" />}
-                <div><strong>{routeData.data_status.source}</strong><span>{routeData.data_status.message}</span></div>
+                {routeData.data_status.is_live ? <Database size={18} aria-hidden="true" /> : <AlertCircle size={18} aria-hidden="true" />}
+                <div><strong>{routeData.data_status.is_live ? routeData.data_status.source : "Not live pedestrian data"}</strong><span>{routeData.data_status.message}</span></div>
               </div>
 
               <div className={routeData.routing_status.is_live_routing ? "routing-status live" : "routing-status fallback"} aria-label="Walking route source">
@@ -454,8 +473,22 @@ export default function App() {
                 </div>
               </div>
 
+              <div className="refuge-controls" aria-label="Sensory refuge locations">
+                <button type="button" className={showRefuges ? "refuge-toggle active" : "refuge-toggle"} onClick={() => setShowRefuges(!showRefuges)} aria-pressed={showRefuges}>
+                  {showRefuges ? "Hide sensory refuges" : "Show sensory refuges"}
+                </button>
+                {showRefuges && <div className="refuge-filters" aria-label="Filter sensory refuges by category">
+                  <button type="button" className={refugeCategory === "All" ? "active" : ""} onClick={() => setRefugeCategory("All")}>All</button>
+                  {refugeCategories.map((category) => <button type="button" key={category} className={refugeCategory === category ? "active" : ""} onClick={() => setRefugeCategory(category)}>{category}</button>)}
+                </div>}
+              </div>
+
               {loading && <div className="loading-card">Calculating sensory load from pedestrian count data...</div>}
               {error && <div className="error-card">{error}</div>}
+              <div className={`congestion-guidance ${routeData.congestion_guidance.status}`} role="status">
+                <AlertCircle size={18} aria-hidden="true" />
+                <div><strong>{routeData.congestion_guidance.status === "lower_congestion_route_available" ? "Lower-congestion route recommended" : routeData.congestion_guidance.status === "no_lower_congestion_route_available" ? "No lower-congestion route available" : "No congested corridor identified"}</strong><span>{routeData.congestion_guidance.message}</span></div>
+              </div>
 
               <div className="route-list">
                 {!loading && routeData.routes.map((route) => (
@@ -478,14 +511,14 @@ export default function App() {
             <section className="map-panel" aria-label="Map and route evidence">
               <div className="map-toolbar">
                 <div><p className="eyebrow">Selected route</p><h2>{selectedRoute?.route_name ?? "Loading route"}</h2></div>
-                <div className="map-legend" aria-label="Map sensor legend">
-                  <strong>Pedestrian sensors</strong>
+                <div className="map-legend" aria-label="Map pedestrian activity legend">
+                  <strong>Pedestrian activity</strong>
                   {selectedRoute?.sensory_level === "Unknown" ? (
                     <span><CircleHelp size={14} aria-hidden="true" /> No nearby sensor data</span>
                   ) : (
                     <>
                       <span><i className="legend-symbol low-symbol" /> Low activity</span>
-                      <span><i className="legend-symbol high-symbol" /> High activity</span>
+                      <span><i className="legend-symbol high-symbol" /> Congested corridor</span>
                     </>
                   )}
                 </div>
@@ -496,6 +529,9 @@ export default function App() {
                   destination={routeData.destination}
                   routes={routeData.routes}
                   selectedRouteId={selectedRoute?.id}
+                  refuges={visibleRefuges}
+                  showRefuges={showRefuges}
+                  onNavigateRefuge={navigateToRefuge}
                   onRouteSelect={(routeId) => { setSelectedRouteId(routeId); setExpandedRouteId(routeId); }}
                 />
               </div>

@@ -1,4 +1,4 @@
-import { AlertTriangle, CheckCircle2, ChevronDown, ChevronUp, CircleHelp, Gauge, Info, MapPin, Timer } from "lucide-react";
+import { AlertTriangle, CheckCircle2, ChevronDown, ChevronUp, CircleHelp, Gauge, Info, MapPin, Timer, UsersRound } from "lucide-react";
 import type { RatedRoute } from "../types";
 
 interface RouteCardProps {
@@ -37,6 +37,10 @@ export default function RouteCard({ route, selected, expanded, onSelect, onToggl
 
         <span className="route-summary">{route.summary}</span>
 
+        {route.is_low_congestion_recommendation && (
+          <span className="recommendation-badge"><CheckCircle2 size={15} aria-hidden="true" /> Recommended lower-congestion route</span>
+        )}
+
         <span className="route-stats">
           <span>
             <Timer size={15} aria-hidden="true" />
@@ -50,6 +54,7 @@ export default function RouteCard({ route, selected, expanded, onSelect, onToggl
             <Gauge size={15} aria-hidden="true" />
             {route.average_pedestrian_count === null ? "No nearby data" : `Avg ${route.average_pedestrian_count}/min`}
           </span>
+          {route.congestion.congested_segment_count > 0 && <span className="congestion-stat"><UsersRound size={15} aria-hidden="true" /> {route.congestion.congested_segment_count} congested area{route.congestion.congested_segment_count === 1 ? "" : "s"}</span>}
         </span>
       </button>
 
@@ -80,6 +85,10 @@ export default function RouteCard({ route, selected, expanded, onSelect, onToggl
             <div>
               <dt>Highest count</dt>
               <dd>{route.highest_pedestrian_count === null ? "Not available" : `${route.highest_pedestrian_count}/min`}</dd>
+            </div>
+            <div>
+              <dt>Congested areas</dt>
+              <dd>{route.congestion.congested_segment_count}</dd>
             </div>
           </dl>
           {route.nearby_sensors.length > 0 && (
