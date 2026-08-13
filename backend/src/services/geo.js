@@ -47,3 +47,30 @@ export function distanceToPolyline(point, coordinates) {
   }
   return Math.min(...distances);
 }
+
+export function nearestPointOnPolyline(point, coordinates) {
+  if (coordinates.length === 0) return null;
+  if (coordinates.length === 1) return coordinates[0];
+
+  let nearestPoint = coordinates[0];
+  let shortestDistance = Infinity;
+  for (let i = 0; i < coordinates.length - 1; i += 1) {
+    const segmentStart = coordinates[i];
+    const segmentEnd = coordinates[i + 1];
+    const origin = segmentStart;
+    const p = projectToLocalMetres(origin, point);
+    const b = projectToLocalMetres(origin, segmentEnd);
+    const lengthSquared = b.x * b.x + b.y * b.y;
+    const t = lengthSquared === 0 ? 0 : Math.max(0, Math.min(1, (p.x * b.x + p.y * b.y) / lengthSquared));
+    const candidate = [
+      segmentStart[0] + (segmentEnd[0] - segmentStart[0]) * t,
+      segmentStart[1] + (segmentEnd[1] - segmentStart[1]) * t
+    ];
+    const distance = distanceMetres(point, candidate);
+    if (distance < shortestDistance) {
+      shortestDistance = distance;
+      nearestPoint = candidate;
+    }
+  }
+  return nearestPoint;
+}

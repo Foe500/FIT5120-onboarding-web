@@ -103,7 +103,7 @@ export default function RouteMap({
       {visibleSensors.map((sensor) => (
         <Marker
           key={`${sensor.location_id}-${sensor.sensing_datetime}`}
-          position={[sensor.latitude, sensor.longitude]}
+          position={sensor.route_position ?? [sensor.latitude, sensor.longitude]}
           icon={sensorIcon(sensor.density_level)}
         >
           <Popup>
@@ -115,6 +115,8 @@ export default function RouteMap({
             <br />
             Density: {sensor.density_level}
             <br />
+            Displayed at the nearest point on the route ({sensor.distance_to_route_meters} m from sensor)
+            <br />
             Source: {sensor.source}
           </Popup>
         </Marker>
@@ -123,12 +125,12 @@ export default function RouteMap({
       {congestedAreas.map((area) => (
         <Fragment key={`congestion-${area.location_id}`}>
           <Circle
-            center={[area.latitude, area.longitude]}
+            center={area.route_position}
             radius={70}
             pathOptions={{ color: "#b55431", fillColor: "#d96b43", fillOpacity: 0.22, weight: 2, dashArray: "5 7" }}
           />
           <Marker
-            position={[area.latitude, area.longitude]}
+            position={area.route_position}
             icon={congestionIcon()}
           >
             <Popup>
@@ -140,7 +142,7 @@ export default function RouteMap({
               <br />
               Estimated congestion area: 70 m radius
               <br />
-              {area.distance_to_route_meters} m from selected route
+              Sensor is {area.distance_to_route_meters} m from selected route; marker is aligned to the route
             </Popup>
           </Marker>
         </Fragment>

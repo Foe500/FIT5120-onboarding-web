@@ -135,6 +135,16 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 3px solid 
 .input-action-row input { width: 100%; min-width: 0; height: 42px; padding: 0 11px; border: 1px solid #cbd6d0; border-radius: 6px; color: var(--ink); background: #fff; }
 .location-button { min-height: 42px; display: inline-flex; align-items: center; gap: 6px; padding: 0 10px; border: 1px solid #cfe1d8; border-radius: 6px; color: var(--teal-dark); background: #f3f9f6; font-size: 0.76rem; font-weight: 750; }
 .location-button:disabled { cursor: wait; opacity: 0.6; }
+.result-input-help { display: block; margin-top: 5px; color: #70817a; font-size: 0.62rem; line-height: 1.35; }
+.result-current-location { margin-top: 8px; }
+.result-place-results { display: grid; max-height: 180px; margin-top: 8px; overflow-y: auto; border: 1px solid #d8e2dd; border-radius: 6px; background: #fff; }
+.result-place-results button { display: flex; align-items: flex-start; gap: 8px; padding: 8px 9px; border: 0; border-bottom: 1px solid #e5ece8; color: var(--ink); background: #fff; text-align: left; }
+.result-place-results button:last-child { border-bottom: 0; }
+.result-place-results button:hover { background: #eef8f4; }
+.result-place-results svg { flex: 0 0 auto; margin-top: 2px; color: var(--teal-dark); }
+.result-place-results strong, .result-place-results small { display: block; }
+.result-place-results strong { font-size: 0.7rem; }
+.result-place-results small { margin-top: 2px; color: #65766e; font-size: 0.6rem; line-height: 1.3; }
 .result-location-status { display: block; margin-top: 6px; color: var(--teal-dark); font-size: 0.66rem; }
 .result-location-status.error { color: #963f24; }
 .quick-section { margin-top: 15px; }

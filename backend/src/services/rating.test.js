@@ -55,6 +55,8 @@ test("rates a route from sensors within 180 metres", () => {
   assert.equal(result.congestion.congested_segment_count, 1);
   assert.equal(result.congestion.exposure_score, 60);
   assert.equal(result.congestion.congested_areas[0].sensor_description, "Test sensor");
+  assert.ok(result.nearby_sensors[0].route_position);
+  assert.ok(result.congestion.congested_areas[0].route_position);
 });
 
 test("does not mark low-activity route sensors as congested", () => {

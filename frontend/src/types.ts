@@ -31,6 +31,7 @@ export interface Sensor {
   sensing_datetime: string;
   density_level: "Low" | "High";
   distance_to_route_meters?: number;
+  route_position?: Coordinates;
   source: string;
 }
 
@@ -64,6 +65,7 @@ export interface CongestedArea {
   sensor_description: string;
   latitude: number;
   longitude: number;
+  route_position: Coordinates;
   pedestrian_count: number;
   distance_to_route_meters: number;
   sensing_datetime: string;

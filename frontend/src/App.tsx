@@ -183,6 +183,47 @@ export default function App() {
     setError("");
   }
 
+  async function searchResultStart(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const query = startInput.trim();
+    if (!query) {
+      setError("Enter a starting point in Melbourne CBD.");
+      return;
+    }
+
+    const preset = starts.find((start) => start.name.toLowerCase() === query.toLowerCase());
+    if (preset) {
+      chooseStart(preset);
+      return;
+    }
+
+    setSearchingField("start");
+    setStartSearchMessage("");
+    setError("");
+    try {
+      const payload = await searchPlaces(query);
+      setStartPlaceResults(payload.results);
+      setStartSearchMessage(payload.results.length
+        ? "Choose a matching starting point to update the route."
+        : "No matching starting points were found within Melbourne CBD.");
+    } catch (requestError) {
+      setStartPlaceResults([]);
+      setError(requestError instanceof Error ? requestError.message : "Starting points could not be searched.");
+    } finally {
+      setSearchingField(null);
+    }
+  }
+
+  function selectResultStart(start: Place) {
+    setSelectedStart(start);
+    setStartInput(start.name);
+    setCurrentCoordinates(null);
+    setStartPlaceResults([]);
+    setStartSearchMessage("");
+    setLocationError("");
+    void loadRoutes(start.name, destinationInput, null, selectedDestination, start);
+  }
+
   function selectSearchedDestination(destination: Place) {
     setSelectedDestination(destination);
     setDestinationInput(destination.name);
@@ -430,21 +471,41 @@ export default function App() {
 
               <div className="start-control">
                 <label htmlFor="result-start">Starting point</label>
-                <div className="input-action-row">
-                  <input
-                    id="result-start"
-                    value={startInput}
-                    onChange={(event) => {
-                      setStartInput(event.target.value);
-                      setSelectedStart(null);
-                      setCurrentCoordinates(null);
-                      setLocationError("");
-                    }}
-                  />
-                  <button type="button" className="location-button" onClick={useCurrentLocation} disabled={locating} title="Use current location">
-                    <LocateFixed size={16} aria-hidden="true" /><span>{locating ? "Locating..." : "Use current"}</span>
-                  </button>
-                </div>
+                <form onSubmit={searchResultStart}>
+                  <div className="input-action-row">
+                    <input
+                      id="result-start"
+                      value={startInput}
+                      onChange={(event) => {
+                        setStartInput(event.target.value);
+                        setSelectedStart(null);
+                        setCurrentCoordinates(null);
+                        setStartPlaceResults([]);
+                        setStartSearchMessage("");
+                        setLocationError("");
+                      }}
+                      aria-describedby="result-start-help"
+                    />
+                    <button type="submit" className="location-button" disabled={searchingField === "start"} title="Search starting point">
+                      <Search size={16} aria-hidden="true" /><span>{searchingField === "start" ? "Searching..." : "Update"}</span>
+                    </button>
+                  </div>
+                </form>
+                <span id="result-start-help" className="result-input-help">Enter an address, then choose a matching location.</span>
+                {startSearchMessage && <span className="result-location-status" role="status">{startSearchMessage}</span>}
+                {startPlaceResults.length > 0 && (
+                  <div className="result-place-results" aria-label="Matching starting points">
+                    {startPlaceResults.map((start) => (
+                      <button type="button" key={start.id} onClick={() => selectResultStart(start)}>
+                        <MapPin size={15} aria-hidden="true" />
+                        <span><strong>{start.name}</strong><small>{start.address}</small></span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+                <button type="button" className="location-button result-current-location" onClick={useCurrentLocation} disabled={locating} title="Use current location">
+                  <LocateFixed size={16} aria-hidden="true" /><span>{locating ? "Locating..." : "Use current location"}</span>
+                </button>
                 {currentCoordinates && <span className="result-location-status">Current location ready</span>}
                 {locationError && <span className="result-location-status error" role="alert">{locationError}</span>}
               </div>

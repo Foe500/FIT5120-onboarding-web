@@ -1,4 +1,4 @@
-import { distanceToPolyline } from "./geo.js";
+import { distanceToPolyline, nearestPointOnPolyline } from "./geo.js";
 
 const NEAR_ROUTE_THRESHOLD_METRES = 180;
 export const CONGESTION_THRESHOLD = 50;
@@ -11,7 +11,8 @@ export function rateRoute(route, sensors) {
   const nearbySensors = sensors
     .map((sensor) => ({
       ...sensor,
-      distance_to_route_meters: Math.round(distanceToPolyline([sensor.latitude, sensor.longitude], route.coordinates))
+      distance_to_route_meters: Math.round(distanceToPolyline([sensor.latitude, sensor.longitude], route.coordinates)),
+      route_position: nearestPointOnPolyline([sensor.latitude, sensor.longitude], route.coordinates)
     }))
     .filter((sensor) => sensor.distance_to_route_meters <= NEAR_ROUTE_THRESHOLD_METRES)
     .sort((a, b) => b.total_of_directions - a.total_of_directions);
@@ -34,6 +35,7 @@ export function rateRoute(route, sensors) {
       sensor_description: sensor.sensor_description,
       latitude: sensor.latitude,
       longitude: sensor.longitude,
+      route_position: sensor.route_position,
       pedestrian_count: Number(sensor.total_of_directions),
       distance_to_route_meters: sensor.distance_to_route_meters,
       sensing_datetime: sensor.sensing_datetime
